@@ -1,3 +1,5 @@
+'use strict';
+
 function Dispatcher() {
   this.stores = {};
 }

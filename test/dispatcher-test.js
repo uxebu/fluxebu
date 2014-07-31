@@ -31,7 +31,7 @@ describe('dispatcher', function() {
     expect(storeViews['a-store']).toBe(storeA.storeView);
     expect(storeViews['b-store']).toBe(storeB.storeView);
     expect(storeViews['c-store']).toBe(storeC.storeView);
-    expect(storeViews['d']).toBe(null);
+    expect(storeViews.d).toBe(null);
   });
 });
 
