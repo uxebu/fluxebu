@@ -29,7 +29,7 @@ StoreViewProxy.prototype = {
     }
     this.wrapped = storeView;
 
-    // overwrite proxying methods with versions that delegate directly
+    // overwrite delayed proxying methods with versions that delegate directly
     this.query = queryOnceResolved;
     this.subscribe = subscribeOnceResolved;
     this.unsubscribe = unsubscribeOnceResolved;
