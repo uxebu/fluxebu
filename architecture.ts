@@ -59,7 +59,7 @@ interface Store {
   notify(actionType: string, payload?: any): StoreView;
 }
 
-interface Map<T> {
+interface MapObject<T> {
   [index: string]: T;
 }
 
@@ -91,7 +91,7 @@ interface Dispatcher {
    * Returns a map object containing all produced StoreView instances keyed by
    * store name.
    */
-  dispatch(actionType: string, payload?: any): Map<StoreView>;
+  dispatch(actionType: string, payload?: any): MapObject<StoreView>;
 }
 
 interface RouteHandledCallback {
@@ -100,7 +100,7 @@ interface RouteHandledCallback {
 
 interface RouteInformation {
   /** Matches from route placeholders */
-  params: Map<string>;
+  params: MapObject<string>;
 
   /** Splats matched by the route */
   splats: Array<string>;
@@ -181,7 +181,7 @@ interface Router {
    * Adds all routes from an object: keys are patterns, values are arrays
    * containing an array with store names and user data
    */
-  addRoutes(routes: Map<RouteTuple>): Router;
+  addRoutes(routes: MapObject<RouteTuple>): Router;
 
   /**
    * Adds all routes from a list of pairs: the first member must be a string or
