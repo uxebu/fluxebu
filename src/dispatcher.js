@@ -8,26 +8,23 @@ function Dispatcher() {
 
 Dispatcher.prototype = {
   dispatch: function(actionType, payload) {
-    function createProxy(storeName) {
-      var proxy = proxies[storeName];
-      if (proxy) {
-        return proxy;
-      }
-      return (proxies[storeName] = new StoreViewProxy());
-    }
-
     function waitFor(storeName) {
-      return storeViews[storeName] || createProxy(storeName);
+      var storeView = storeViews[storeName];
+      if (!storeView) {
+        storeView = storeViews[storeName] = new StoreViewProxy();
+      }
+      return storeView;
     }
 
     var storeViews = {};
-    var proxies = {};
     var stores = this.stores;
     for (var key in stores) {
-      storeViews[key] = stores[key].notify(actionType, payload, waitFor);
-      if (proxies[key]) {
-        proxies[key].resolve(storeViews[key]);
+      var storeView = stores[key].notify(actionType, payload, waitFor);
+      var proxyView = storeViews[key];
+      if (proxyView) {
+        proxyView.resolve(storeView);
       }
+      storeViews[key] = storeView;
     }
     return storeViews;
   },
