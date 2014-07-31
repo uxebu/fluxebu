@@ -26,7 +26,8 @@ TODOs
 ---
 
 - Convenience API on the router
-- store synchronization within the dispatcher aka `waitsFor()`. Or maybe `subscribeStore(name, store, [waitForNames])`
+- store synchronization within the dispatcher aka `waitsFor()`. Or maybe `subscribeStore(name, store, [waitForNames])`.
+  `Store#notify()` could also get the already collected store views in addition to action type and payload.
 - Router implementation that has a notion of the “current route” and can subscribe to stores to provide data updates.
   It also has to cancel all live subscriptions as soon as the route changes.
 - Example stores and an example Application
