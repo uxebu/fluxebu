@@ -148,15 +148,17 @@ interface Router {
    * Adds a route
    *
    * @param pattern - The pattern of the route to register
-   * @param stores - The stores to query for this route
+   * @param stores - The name of the stores to query for this route.
+   *    The names must match the names that have been used to register stores
+   *    with the dispatcher.
    * @param userData - Any additional data that should be forwarded to callbacks
    *    of `handleRoute`.
    * @returns The router instance
    */
-  addRoute(pattern: string, stores: Map<Store>, ...userData: any[]): Router;
+  addRoute(pattern: string, stores: Array<string>, ...userData: any[]): Router;
 
   /**
    * Adds a route where the pattern is a regular expression rather than a string.
    */
-  addRoute(pattern: RegExp, stores: Map<Store>, ...userData: any[]): Router;
+  addRoute(pattern: RegExp, stores: Array<string>, ...userData: any[]): Router;
 }
