@@ -1,5 +1,7 @@
 'use strict';
 
+var StoreViewProxy = require('./store-view-proxy');
+
 function Dispatcher() {
   this.stores = {};
 }
@@ -11,7 +13,7 @@ Dispatcher.prototype = {
       if (proxy) {
         return proxy;
       }
-      return (proxies[storeName] = new ProxyStoreView());
+      return (proxies[storeName] = new StoreViewProxy());
     }
 
     function waitFor(storeName) {
@@ -34,25 +36,6 @@ Dispatcher.prototype = {
   },
   unsubscribeStore: function(name) {
     delete this.stores[name];
-  }
-};
-
-function ProxyStoreView() {
-  this.queries = [];
-  this.proxied = null;
-}
-ProxyStoreView.prototype = {
-  resolve: function(storeView) {
-    this.queries.forEach(storeView.query, storeView);
-    this.proxied = storeView;
-  },
-  query: function(callback) {
-    var proxied = this.proxied;
-    if (proxied) {
-      proxied.query(callback);
-    } else {
-      this.queries.push(callback);
-    }
   }
 };
 

@@ -1,4 +1,5 @@
 var Dispatcher = require('../../src/dispatcher');
+var MockStoreView = require('../mock/store-view');
 
 describe('dispatcher', function() {
   var dispatcher, storeA, storeB, storeC;
@@ -92,13 +93,9 @@ function mockStore() {
 }
 
 function asyncStore(value) {
-  return {
-    notify: function() {
-      return {
-        query: function(callback) {
-          process.nextTick(function() { callback(value); });
-        }
-      };
-    }
+  var storeView = new MockStoreView();
+  storeView.query = function(callback) {
+    process.nextTick(function() { callback(value); });
   };
+  return {notify: function() { return storeView; }};
 }
