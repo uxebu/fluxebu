@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "An approach to flux that works for server-side (stateless) and client-side (stateful) component rendering.",
   "scripts": {
-    "test": "mocha -r setup-referee-sinon/globals",
+    "test": "mocha -R dot -r setup-referee-sinon/globals $MOCHA_ARGS",
     "lint": "jshint src test"
   },
   "repository": {
