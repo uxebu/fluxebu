@@ -55,8 +55,12 @@ interface Store {
    * If the store provides different data for different action types or payloads
    * it **must** return different StoreView instances for different
    * notifications. This is necessary to handle concurrent actions.
+   *
+   * The `waitFor` function can be used to retrieve store views for other named
+   * stores for the current dispatch cycle. Retrieved store views can be used to
+   * model inter-store dependencies.
    */
-  notify(actionType: string, payload?: any): StoreView;
+  notify(actionType: string, payload: any, waitFor: (storeName: string) => StoreView): StoreView;
 }
 
 interface MapObject<T> {
