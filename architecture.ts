@@ -59,6 +59,10 @@ interface Store {
   notify(actionType: string, payload?: any): StoreView;
 }
 
+interface Map<T> {
+  [index: string]: T;
+}
+
 
 /**
  * Dispatcher instances allow stores to be registered and for actions to be
@@ -80,8 +84,8 @@ interface Dispatcher {
    *
    * All registered stores will be notified about the action.
    *
-   * Returns an object containing all produced StoreView instances keyed by
+   * Returns a map object containing all produced StoreView instances keyed by
    * store name.
    */
-  dispatch(actionType: string, payload?: any): Object;
+  dispatch(actionType: string, payload?: any): Map<StoreView>;
 }
