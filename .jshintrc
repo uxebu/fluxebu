@@ -6,6 +6,7 @@
   "es3": true,
   "freeze": true,
   "latedef": "nofunc",
+  "newcap": true,
   "nonew": true,
   "node": true,
   "strict": true,
