@@ -1,0 +1,13 @@
+{
+  "extends": "../.jshintrc",
+  "globals": {
+    "describe": true,
+    "xdescribe": true,
+    "it": true,
+    "xit": true,
+    "expect": true,
+    "sinon": true,
+    "beforeEach": true
+  },
+  "strict": false
+}
