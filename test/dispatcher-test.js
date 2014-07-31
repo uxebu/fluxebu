@@ -16,6 +16,8 @@ describe('dispatcher', function() {
     var actionType = 'arbitrary', payload = {arbitrary: 'payload'};
     dispatcher.dispatch(actionType, payload);
     expect(storeA.notify).toHaveBeenCalledWith(actionType, payload);
+    expect(storeB.notify).toHaveBeenCalledWith(actionType, payload);
+    expect(storeC.notify).toHaveBeenCalledWith(actionType, payload);
   });
 
   it('does not notify stores that have been unsubscribed', function() {
