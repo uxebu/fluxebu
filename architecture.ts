@@ -63,6 +63,10 @@ interface Map<T> {
   [index: string]: T;
 }
 
+interface Pair<T, U> {
+  0: T;
+  1: U;
+}
 
 /**
  * Dispatcher instances allow stores to be registered and for actions to be
@@ -115,6 +119,17 @@ interface RouteInformation {
 }
 
 /**
+ * Contains a route definition that can be used with Router.addRoutes
+ */
+interface RouteTuple {
+  /** names of needed stores */
+  0: Array<string>;
+
+  /** any user data */
+  [index: number]: any;
+}
+
+/**
  * Routers provide mechanics that allow to collect data from different stores
  * in for specific routes.
  */
@@ -161,4 +176,16 @@ interface Router {
    * Adds a route where the pattern is a regular expression rather than a string.
    */
   addRoute(pattern: RegExp, stores: Array<string>, ...userData: any[]): Router;
+
+  /**
+   * Adds all routes from an object: keys are patterns, values are arrays
+   * containing an array with store names and user data
+   */
+  addRoutes(routes: Map<RouteTuple>): Router;
+
+  /**
+   * Adds all routes from a list of pairs: the first member must be a string or
+   * a regular expression, the second a RouteTuple;
+   */
+  addRoutes(...routes: Array<Pair<any, RouteTuple>>): Router;
 }
