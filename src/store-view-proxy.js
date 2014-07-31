@@ -37,6 +37,9 @@ StoreViewProxy.prototype = {
     // replay queries and subscriptions on the wrapped store view
     this.queries.forEach(storeView.query, storeView);
     this.subscriptions.forEach(storeView.subscribe, storeView);
+
+    // clean up
+    this.queries = this.subscriptions = null;
   }
 };
 
