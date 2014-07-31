@@ -101,7 +101,7 @@ interface RouteInformation {
   /** Splats matched by the route */
   splats: Array<string>;
 
-  /** The URL hash without leading '#' */
+  /** The URL hash including the leading '#' */
   hash: string;
 
   /** The path component of the handled URL */
