@@ -1,4 +1,4 @@
-var Router = require('../src/router');
+var Router = require('../../src/router');
 
 describe('Router', function() {
   var dispatcher, router;
@@ -87,7 +87,7 @@ describe('Router', function() {
     it('exposes the passed in dispatcher as `dispatcher` property', function() {
       expect(router.dispatcher).toBe(dispatcher);
     });
-    
+
     it('dispatches a "route" event when handling a route, containing URL information', function(done) {
       router.handleURL('http://example.org/foo/bar/baz/123.png?a=b#hash', null, function() {
         expect(dispatcher.dispatch).toHaveBeenCalledWithMatch('route', {
@@ -101,7 +101,7 @@ describe('Router', function() {
         done();
       });
     });
-    
+
     it('adds the provided user data to the "route" action payload', function(done) {
       var userData = {additional: userData};
       router.handleURL('/foo/a/123.json', userData, function() {
@@ -136,7 +136,7 @@ describe('Router', function() {
         done();
       });
     });
-    
+
     it('does not query data that is not needed', function(done) {
       storeViewsReturnedByDispatcher.notNeeded = {query: sinon.spy()};
       router.handleURL('/', null, function() {
@@ -152,7 +152,7 @@ describe('Router', function() {
         done();
       });
     });
-    
+
     it('throws a `TypeError` if a data source is not provided by the dispatcher', function() {
       delete storeViewsReturnedByDispatcher.b;
       expect(function() {
@@ -160,7 +160,7 @@ describe('Router', function() {
       }).toThrow('TypeError');
     });
   });
-  
+
   describe('route user data', function() {
     var routeDataA = '123', routeDataB = {arbitrary: 'arbitrary'};
     beforeEach(function() {

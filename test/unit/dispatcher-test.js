@@ -1,4 +1,4 @@
-var Dispatcher = require('../src/dispatcher');
+var Dispatcher = require('../../src/dispatcher');
 
 describe('dispatcher', function() {
   var dispatcher, storeA, storeB, storeC;
