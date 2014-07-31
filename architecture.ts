@@ -89,3 +89,90 @@ interface Dispatcher {
    */
   dispatch(actionType: string, payload?: any): Map<StoreView>;
 }
+
+/**
+ * Route configurations contain an array of objects with named stores that
+ * provide data needed for a specific route.
+ */
+interface RouteConfiguration {
+  /**
+   * An array of map objects of stores that provide data for the route.
+   * This is an array so that merging route-specific stores with common stores
+   * is possible.
+   *
+   * If store objects contain stores with the same name, the first store of that
+   * name will be used.
+   */
+  stores: Array<Map<Store>>
+}
+
+interface RouteHandledCallback {
+  (collectedData: Object, ...userData: any[]): void;
+}
+
+interface RouteInformation {
+  /** Matches from route placeholders */
+  params: Map<string>;
+
+  /** Splats matched by the route */
+  params: Array<string>;
+
+  /** The URL hash without leading '#' */
+  hash: string;
+
+  /** The path component of the handled URL */
+  pathname: string;
+
+  /** The path and search components of the handled URL */
+  path: string;
+
+  /** The parsed query string of the handled URL */
+  query: Object;
+}
+
+/**
+ * Routers provide mechanics that allow to collect data from different stores
+ * in for specific routes.
+ */
+interface Router {
+  /**
+   * The dispatcher to use for route dispatching
+   */
+  dispatcher: Dispatcher;
+
+  /**
+   * Returns whether the router has a route that matches the passed in URL.
+   */
+  canHandleURL(url: string): boolean;
+
+  /**
+   * Handles a path if possible. Returns whether a mathing routes exist.
+   *
+   * If an URL can be handled, a `'route'` action will be dispatched using the
+   * `dispatcher`. The action payload will be route information and the
+   * passed in user data ({@see RouteInformation}).
+   *
+   * @param url - the URL to handle
+   * @param userData - An object with predefined or additional data.
+   * @param callback - will receive the collected data and the user data of
+   *    the dispatched route.
+   * @returns Whether the URL can be handled and the callback will be invoked.
+   */
+  handleURL(url: string, userData: Object, callback: RouteHandledCallback): boolean;
+
+  /**
+   * Adds a route
+   *
+   * @param pattern - The pattern of the route to register
+   * @param route - The route configuration
+   * @param userData - Any additional data that should be forwarded to callbacks
+   *    of `handleRoute`.
+   * @returns The router instance
+   */
+  addRoute(pattern: string, route: RouteConfiguration, ...userData: any[]): Router;
+
+  /**
+   * Adds a route where the pattern is a regular expression rather than a string.
+   */
+  addRoute(pattern: RegExp, route: RouteConfiguration, ...userData: any[]): Router;
+}
