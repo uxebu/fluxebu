@@ -21,3 +21,10 @@ Ideas and Concepts
 
   [React]: http://facebook.github.io/react/
   [flux]: http://facebook.github.io/react/docs/flux-overview.html
+
+TODOs
+---
+
+- Convenience API on the router
+- store synchronization within the dispatcher aka `waitsFor()`. Or maybe `subscribeStore(name, store, [waitForNames])`
+
