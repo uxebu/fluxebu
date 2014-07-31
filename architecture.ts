@@ -90,22 +90,6 @@ interface Dispatcher {
   dispatch(actionType: string, payload?: any): Map<StoreView>;
 }
 
-/**
- * Route configurations contain an array of objects with named stores that
- * provide data needed for a specific route.
- */
-interface RouteConfiguration {
-  /**
-   * An array of map objects of stores that provide data for the route.
-   * This is an array so that merging route-specific stores with common stores
-   * is possible.
-   *
-   * If store objects contain stores with the same name, the first store of that
-   * name will be used.
-   */
-  stores: Array<Map<Store>>
-}
-
 interface RouteHandledCallback {
   (collectedData: Object, ...userData: any[]): void;
 }
@@ -164,15 +148,15 @@ interface Router {
    * Adds a route
    *
    * @param pattern - The pattern of the route to register
-   * @param route - The route configuration
+   * @param stores - The stores to query for this route
    * @param userData - Any additional data that should be forwarded to callbacks
    *    of `handleRoute`.
    * @returns The router instance
    */
-  addRoute(pattern: string, route: RouteConfiguration, ...userData: any[]): Router;
+  addRoute(pattern: string, stores: Map<Store>, ...userData: any[]): Router;
 
   /**
    * Adds a route where the pattern is a regular expression rather than a string.
    */
-  addRoute(pattern: RegExp, route: RouteConfiguration, ...userData: any[]): Router;
+  addRoute(pattern: RegExp, stores: Map<Store>, ...userData: any[]): Router;
 }
