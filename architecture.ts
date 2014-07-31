@@ -99,7 +99,7 @@ interface RouteInformation {
   params: Map<string>;
 
   /** Splats matched by the route */
-  params: Array<string>;
+  splats: Array<string>;
 
   /** The URL hash without leading '#' */
   hash: string;
