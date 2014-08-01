@@ -20,11 +20,11 @@ Router.prototype = {
     this._userData.push(slice.call(arguments, 2));
     return this;
   },
-  canHandleURL: function(url) {
+  canHandleUrl: function(url) {
     url = parseUrl(url);
     return !!routes.match(this._routes, url.pathname);
   },
-  handleURL: function(url, data, callback) {
+  handleUrl: function(url, data, callback) {
     url = parseUrl(url, true);
     var match = routes.match(this._routes, url.pathname);
     if (!match) { return false; }

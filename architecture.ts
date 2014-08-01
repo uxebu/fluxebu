@@ -150,7 +150,7 @@ interface Router {
   /**
    * Returns whether the router has a route that matches the passed in URL.
    */
-  canHandleURL(url: string): boolean;
+  canHandleUrl(url: string): boolean;
 
   /**
    * Handles a path if possible. Returns whether a mathing routes exist.
@@ -165,7 +165,7 @@ interface Router {
    *    the dispatched route.
    * @returns Whether the URL can be handled and the callback will be invoked.
    */
-  handleURL(url: string, userData: Object, callback: RouteHandledCallback): boolean;
+  handleUrl(url: string, userData: Object, callback: RouteHandledCallback): boolean;
 
   /**
    * Adds a route
