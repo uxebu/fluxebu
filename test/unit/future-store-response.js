@@ -1,12 +1,12 @@
 var FutureStoreResponse = require('../../src/future-store-response');
-var StoreResponseMock = require('../mock/store-response');
+var MockStoreResponse = require('../mock/store-response');
 
 describe('FutureStoreResponse:', function() {
   var proxy, wrapped;
   var callbacks;
   beforeEach(function() {
     proxy = new FutureStoreResponse();
-    wrapped = new StoreResponseMock();
+    wrapped = new MockStoreResponse();
     callbacks = [function() {}, function() {}, function() {}];
   });
 
@@ -35,7 +35,7 @@ describe('FutureStoreResponse:', function() {
     });
     it('throws an error when resolved again', function() {
       expect(function() {
-        proxy.resolve(new StoreResponseMock());
+        proxy.resolve(new MockStoreResponse());
       }).toThrow();
     });
 
