@@ -30,12 +30,12 @@ TODOs
   It also has to cancel all live subscriptions as soon as the route changes.
 - Example stores and an example Application
 - Add a dispatcher that can block until a dispatch is finished. Useful for the browser, really bad for the server.
-  Questions: What does “finished” mean? All collected store views have invoked the callback to `query()`?
+  Questions: What does “finished” mean? All collected store responses have invoked the callback to `query()`?
 
 
 Approach to Store Synchronization
 ---
 
-- `Store#notify` is called with `actionType: String, payload: Object, waitFor: function(name: string): StoreView`. This makes it possible to add per-dispatch store synchronization as in Facebook’s original *flux.*
-- `waitFor()` returns the store view of the desired named store. If it hasn’t become available in the current dispatch
-   cycle, `waitFor` returns a proxy store view that delegates to the desired view as soon as it becomes available.
+- `Store#notify` is called with `actionType: String, payload: Object, waitFor: function(name: string): StoreResponse`. This makes it possible to add per-dispatch store synchronization as in Facebook’s original *flux.*
+- `waitFor()` returns the store response of the desired named store. If it hasn’t become available in the current dispatch
+   cycle, `waitFor` returns a proxy store response that delegates to the desired view as soon as it becomes available.

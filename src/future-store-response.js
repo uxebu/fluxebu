@@ -1,12 +1,12 @@
 'use strict';
 
-function StoreViewProxy() {
+function FutureStoreResponse() {
   this.queries = [];
   this.subscriptions = [];
   this.wrapped = null;
 }
 
-StoreViewProxy.prototype = {
+FutureStoreResponse.prototype = {
   query: function(callback) {
     this.queries.push(callback);
   },
@@ -23,20 +23,20 @@ StoreViewProxy.prototype = {
     }
   },
 
-  resolve: function(storeView) {
+  resolve: function(storeResponse) {
     if (this.wrapped) {
-      throw Error('StoreViewProxy is already resolved.');
+      throw Error('FutureStoreResponse is already resolved.');
     }
-    this.wrapped = storeView;
+    this.wrapped = storeResponse;
 
     // overwrite delayed proxying methods with versions that delegate directly
     this.query = queryOnceResolved;
     this.subscribe = subscribeOnceResolved;
     this.unsubscribe = unsubscribeOnceResolved;
 
-    // replay queries and subscriptions on the wrapped store view
-    this.queries.forEach(storeView.query, storeView);
-    this.subscriptions.forEach(storeView.subscribe, storeView);
+    // replay queries and subscriptions on the wrapped store response
+    this.queries.forEach(storeResponse.query, storeResponse);
+    this.subscriptions.forEach(storeResponse.subscribe, storeResponse);
 
     // clean up
     this.queries = this.subscriptions = null;
@@ -58,4 +58,4 @@ function unsubscribeOnceResolved(callback) {
   this.wrapped.unsubscribe(callback);
 }
 
-module.exports = StoreViewProxy;
+module.exports = FutureStoreResponse;

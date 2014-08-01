@@ -1,5 +1,5 @@
 var Dispatcher = require('../../src/dispatcher');
-var MockStoreView = require('../mock/store-view');
+var MockStoreResponse = require('../mock/store-response');
 
 describe('dispatcher', function() {
   var dispatcher, storeA, storeB, storeC;
@@ -30,11 +30,11 @@ describe('dispatcher', function() {
   it('`dispatch()` returns an object that collects the return values of the notified stores', function() {
     dispatcher.subscribeStore('d', {notify: function() { return null; }});
 
-    var storeViews = dispatcher.dispatch('arbitrary', null);
-    expect(storeViews['a-store']).toBe(storeA.storeView);
-    expect(storeViews['b-store']).toBe(storeB.storeView);
-    expect(storeViews['c-store']).toBe(storeC.storeView);
-    expect(storeViews.d).toBe(null);
+    var storeResponses = dispatcher.dispatch('arbitrary', null);
+    expect(storeResponses['a-store']).toBe(storeA.storeResponse);
+    expect(storeResponses['b-store']).toBe(storeB.storeResponse);
+    expect(storeResponses['c-store']).toBe(storeC.storeResponse);
+    expect(storeResponses.d).toBe(null);
   });
 
   describe('synchronisation:', function() {
@@ -51,8 +51,8 @@ describe('dispatcher', function() {
       storeB.notify = function(actionType, payload, waitFor) {
         return waitFor('a');
       };
-      var storeViews = dispatcher.dispatch('arbitrary', null);
-      queryAandB(storeViews, function(values) {
+      var storeResponses = dispatcher.dispatch('arbitrary', null);
+      queryAandB(storeResponses, function(values) {
         expect(values.a).toBe(values.b);
         done();
       });
@@ -62,20 +62,20 @@ describe('dispatcher', function() {
       storeA.notify = function(actionType, payload, waitFor) {
         return waitFor('b');
       };
-      var storeViews = dispatcher.dispatch('arbitrary', null);
-      queryAandB(storeViews, function(values) {
+      var storeResponses = dispatcher.dispatch('arbitrary', null);
+      queryAandB(storeResponses, function(values) {
         expect(values.a).toBe(values.b);
         done();
       });
     });
 
-    function queryAandB(storeViews, callback) {
+    function queryAandB(storeResponses, callback) {
       var values = {};
-      storeViews.a.query(function(value) {
+      storeResponses.a.query(function(value) {
         values.a = value;
         if (values.b) { callback(values); }
       });
-      storeViews.b.query(function(value) {
+      storeResponses.b.query(function(value) {
         values.b = value;
         if (values.a) { callback(values); }
       });
@@ -84,18 +84,18 @@ describe('dispatcher', function() {
 });
 
 function mockStore() {
-  var storeView = {};
-  var notify = sinon.stub().returns(storeView);
+  var storeResponse = {};
+  var notify = sinon.stub().returns(storeResponse);
   return {
     notify: notify,
-    storeView: storeView
+    storeResponse: storeResponse
   };
 }
 
 function asyncStore(value) {
-  var storeView = new MockStoreView();
-  storeView.query = function(callback) {
+  var storeResponse = new MockStoreResponse();
+  storeResponse.query = function(callback) {
     process.nextTick(function() { callback(value); });
   };
-  return {notify: function() { return storeView; }};
+  return {notify: function() { return storeResponse; }};
 }

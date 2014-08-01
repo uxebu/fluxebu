@@ -1,6 +1,6 @@
 'use strict';
 
-var StoreViewProxy = require('./store-view-proxy');
+var FutureStoreResponse = require('./future-store-response');
 
 function Dispatcher() {
   this.stores = {};
@@ -9,24 +9,24 @@ function Dispatcher() {
 Dispatcher.prototype = {
   dispatch: function(actionType, payload) {
     function waitFor(storeName) {
-      var storeView = storeViews[storeName];
-      if (!storeView) {
-        storeView = storeViews[storeName] = new StoreViewProxy();
+      var storeResponse = storeResponses[storeName];
+      if (!storeResponse) {
+        storeResponse = storeResponses[storeName] = new FutureStoreResponse();
       }
-      return storeView;
+      return storeResponse;
     }
 
-    var storeViews = {};
+    var storeResponses = {};
     var stores = this.stores;
     for (var key in stores) {
-      var storeView = stores[key].notify(actionType, payload, waitFor);
-      var proxyView = storeViews[key];
+      var storeResponse = stores[key].notify(actionType, payload, waitFor);
+      var proxyView = storeResponses[key];
       if (proxyView) {
-        proxyView.resolve(storeView);
+        proxyView.resolve(storeResponse);
       }
-      storeViews[key] = storeView;
+      storeResponses[key] = storeResponse;
     }
-    return storeViews;
+    return storeResponses;
   },
   subscribeStore: function(name, store) {
     this.stores[name] = store;

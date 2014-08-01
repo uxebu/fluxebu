@@ -15,7 +15,7 @@ describe('Router', function() {
     var arbitraryStoreData = {arbitrary: 'data'};
     beforeEach(function() {
       dispatcher.dispatch = sinon.spy(function() {
-        return {arbitrary: storeViewMock(arbitraryStoreData)};
+        return {arbitrary: storeResponseMock(arbitraryStoreData)};
       });
       router.addRoute('/arbitrary/:id(\\d+)', ['arbitrary']);
     });
@@ -114,21 +114,21 @@ describe('Router', function() {
   });
 
   describe('store data collection', function() {
-    var storeViewsReturnedByDispatcher;
+    var storeResponsesReturnedByDispatcher;
     var dataA = 123, dataB = 'bcd', dataC = {foo: 'bar'};
 
     beforeEach(function() {
       router.addRoute('/', ['a', 'b', 'c']);
-      storeViewsReturnedByDispatcher = {
-        a: storeViewMock(dataA),
-        b: storeViewMock(dataB),
-        c: storeViewMock(dataC)
+      storeResponsesReturnedByDispatcher = {
+        a: storeResponseMock(dataA),
+        b: storeResponseMock(dataB),
+        c: storeResponseMock(dataC)
       };
       dispatcher.dispatch = function() {
-        return storeViewsReturnedByDispatcher;
+        return storeResponsesReturnedByDispatcher;
       };
     });
-    it('provides the data with the specified names, using the store views returned by the dispatcher', function(done) {
+    it('provides the data with the specified names, using the store responses returned by the dispatcher', function(done) {
       router.handleURL('/', null, function(collectedData) {
         expect(collectedData.a).toBe(dataA);
         expect(collectedData.b).toBe(dataB);
@@ -138,15 +138,15 @@ describe('Router', function() {
     });
 
     it('does not query data that is not needed', function(done) {
-      storeViewsReturnedByDispatcher.notNeeded = {query: sinon.spy()};
+      storeResponsesReturnedByDispatcher.notNeeded = {query: sinon.spy()};
       router.handleURL('/', null, function() {
-        expect(storeViewsReturnedByDispatcher.notNeeded.query).not.toHaveBeenCalled();
+        expect(storeResponsesReturnedByDispatcher.notNeeded.query).not.toHaveBeenCalled();
         done();
       });
     });
 
-    it('sets collected data to undefined if no store view is provided by the dispatcher, but the store key exists', function(done) {
-      storeViewsReturnedByDispatcher.b = undefined;
+    it('sets collected data to undefined if no store response is provided by the dispatcher, but the store key exists', function(done) {
+      storeResponsesReturnedByDispatcher.b = undefined;
       router.handleURL('/', null, function(collectedData) {
         expect(collectedData.b).toBe(undefined);
         done();
@@ -154,7 +154,7 @@ describe('Router', function() {
     });
 
     it('throws a `TypeError` if a data source is not provided by the dispatcher', function() {
-      delete storeViewsReturnedByDispatcher.b;
+      delete storeResponsesReturnedByDispatcher.b;
       expect(function() {
         router.handleURL('/', null, noop);
       }).toThrow('TypeError');
@@ -177,7 +177,7 @@ describe('Router', function() {
   });
 });
 
-function storeViewMock(data) {
+function storeResponseMock(data) {
   return {
     query: function(callback) {
       process.nextTick(function() {

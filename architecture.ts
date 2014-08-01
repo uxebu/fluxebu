@@ -7,13 +7,13 @@ interface DataCallback {
 }
 
 /**
- * StoreViews provide asynchronous access to a store. They are provided by
+ * StoreResponses provide asynchronous access to a store. They are provided by
  * stores when these are notified about actions.
  */
-interface StoreView {
+interface StoreResponse {
   /**
    * Invokes the callback a single time with the data provided by the store
-   * view. If data is available, the callback may be invoked synchronously.
+   * response. If data is available, the callback may be invoked synchronously.
    */
   query(callback: DataCallback): void;
 
@@ -27,40 +27,44 @@ interface StoreView {
   /**
    * Removes a registered callback so that it won't receive any data updates.
    *
-   * If the last subscribed callback to a StoreView is removed, it might be
+   * If the last subscribed callback to a StoreResponse is removed, it might be
    * appropriate to disconnect the instance from the parent store and brint in
    * into a state where it can be garbage collected. An example is a store that
-   * returns payload-specific store views when notified about an action.
+   * returns payload-specific store responses when notified about an action.
    */
   unsubscribe(callback: DataCallback): void;
+}
+
+interface WaitFor {
+  (storeName: string): StoreResponse
 }
 
 /**
  * A Store is anything that can provide data when notified about actions.
  *
  * Stores will be notified about actions by a dispatcher and respond to actions
- * by returning StoreView instances that provide access to their data.
+ * by returning StoreResponse instances that provide access to their data.
  */
 interface Store {
   /**
    * The `notify` method will be invoked with an action type identifier and
    * action payload.
    *
-   * The store returns a StoreView instance to provide access to the data that
+   * The store returns a StoreResponse instance to provide access to the data that
    * the store will provide in reaction to the action.
    *
    * If the state of the data hold by the store does not depend on specifics of
-   * actions, the store may always return the same StoreView instance.
+   * actions, the store may always return the same StoreResponse instance.
    *
    * If the store provides different data for different action types or payloads
-   * it **must** return different StoreView instances for different
+   * it **must** return different StoreResponse instances for different
    * notifications. This is necessary to handle concurrent actions.
    *
-   * The `waitFor` function can be used to retrieve store views for other named
-   * stores for the current dispatch cycle. Retrieved store views can be used to
-   * model inter-store dependencies.
+   * The `waitFor` function can be used to retrieve store repsponses for other
+   * named stores for the current dispatch cycle. Retrieved store responses can
+   * be used to model inter-store dependencies.
    */
-  notify(actionType: string, payload: any, waitFor: (storeName: string) => StoreView): StoreView;
+  notify(actionType: string, payload: any, waitFor: WaitFor): StoreResponse;
 }
 
 interface MapObject<T> {
@@ -92,10 +96,10 @@ interface Dispatcher {
    *
    * All registered stores will be notified about the action.
    *
-   * Returns a map object containing all produced StoreView instances keyed by
-   * store name.
+   * Returns a map object containing all produced StoreResponse instances keyed
+   * by store name.
    */
-  dispatch(actionType: string, payload?: any): MapObject<StoreView>;
+  dispatch(actionType: string, payload?: any): MapObject<StoreResponse>;
 }
 
 interface RouteHandledCallback {

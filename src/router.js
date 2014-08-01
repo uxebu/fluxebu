@@ -42,7 +42,7 @@ Router.prototype = {
     var index = (match.next - 1);
     var storeNames = this._routeStores[index].slice().sort();
     var userData = this._userData[index];
-    var storeViews = this.dispatcher.dispatch('route', payload);
+    var storeResponses = this.dispatcher.dispatch('route', payload);
     var collectedData = {};
     var callArgs = [collectedData].concat(userData);
 
@@ -56,14 +56,14 @@ Router.prototype = {
 
     if (storeNames.length) {
       storeNames.forEach(function(storeName) {
-        var storeView = storeViews[storeName];
-        if (storeView) {
-          storeView.query(function(data) {
+        var storeResponse = storeResponses[storeName];
+        if (storeResponse) {
+          storeResponse.query(function(data) {
             collectedData[storeName] = data;
             checkDone();
           });
-        } else if (storeName in storeViews) {
-          collectedData[storeName] = storeView;
+        } else if (storeName in storeResponses) {
+          collectedData[storeName] = storeResponse;
           checkDone();
         } else {
           throw TypeError('No store registered with name ' + storeName);

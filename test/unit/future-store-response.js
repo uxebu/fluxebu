@@ -1,12 +1,12 @@
-var StoreViewProxy = require('../../src/store-view-proxy');
-var StoreViewMock = require('../mock/store-view');
+var FutureStoreResponse = require('../../src/future-store-response');
+var StoreResponseMock = require('../mock/store-response');
 
-describe('StoreViewProxy:', function() {
+describe('FutureStoreResponse:', function() {
   var proxy, wrapped;
   var callbacks;
   beforeEach(function() {
-    proxy = new StoreViewProxy();
-    wrapped = new StoreViewMock();
+    proxy = new FutureStoreResponse();
+    wrapped = new StoreResponseMock();
     callbacks = [function() {}, function() {}, function() {}];
   });
 
@@ -35,23 +35,23 @@ describe('StoreViewProxy:', function() {
     });
     it('throws an error when resolved again', function() {
       expect(function() {
-        proxy.resolve(new StoreViewMock());
+        proxy.resolve(new StoreResponseMock());
       }).toThrow();
     });
 
-    it('delegates queries to the wrapped store view directly', function() {
+    it('delegates queries to the wrapped store response directly', function() {
       var callback = function() {};
       proxy.query(callback);
       expect(wrapped.query).toHaveBeenCalledWith(callback);
     });
 
-    it('delegates subscriptions to the wrapped store view directly', function() {
+    it('delegates subscriptions to the wrapped store response directly', function() {
       var callback = function() {};
       proxy.subscribe(callback);
       expect(wrapped.subscribe).toHaveBeenCalledWith(callback);
     });
 
-    it('delegates unsubscriptions to the wrapped store view directly', function() {
+    it('delegates unsubscriptions to the wrapped store response directly', function() {
       var callback = function() {};
       proxy.unsubscribe(callback);
       expect(wrapped.unsubscribe).toHaveBeenCalledWith(callback);
