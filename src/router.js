@@ -24,25 +24,8 @@ Router.prototype = {
     url = parseUrl(url);
     return !!routes.match(this._routes, url.pathname);
   },
-  handleUrl: function(url, data, callback) {
-    url = parseUrl(url, true);
-    var match = routes.match(this._routes, url.pathname);
-    if (!match) { return false; }
 
-    var payload = {
-      params: match.params,
-      splats: match.splats,
-      hash: url.hash,
-      pathname: url.pathname,
-      path: url.path,
-      query: url.query,
-      userData: data
-    };
-
-    var index = (match.next - 1);
-    var storeNames = this._routeStores[index].slice().sort();
-    var userData = this._userData[index];
-    var storeResponses = this.dispatcher.dispatch('route', payload);
+  _resolveStoreResponses: function(storeResponses, storeNames, userData, callback) {
     var collectedData = {};
     var callArgs = [collectedData].concat(userData);
 
@@ -72,7 +55,28 @@ Router.prototype = {
     } else {
       callback.apply(null, callArgs);
     }
+  },
 
+  handleUrl: function(url, data, callback) {
+    url = parseUrl(url, true);
+    var match = routes.match(this._routes, url.pathname);
+    if (!match) { return false; }
+
+    var payload = {
+      params: match.params,
+      splats: match.splats,
+      hash: url.hash,
+      pathname: url.pathname,
+      path: url.path,
+      query: url.query,
+      userData: data
+    };
+
+    var index = (match.next - 1);
+    var storeNames = this._routeStores[index].slice().sort();
+    var userData = this._userData[index];
+    var storeResponses = this.dispatcher.dispatch('route', payload);
+    this._resolveStoreResponses(storeResponses, storeNames, userData, callback);
     return true;
   }
 };
