@@ -1,3 +1,5 @@
+'use strict';
+
 exports.queryStoreResponses = function(storeResponses, callback) {
   var pending = [];
   var collectedData = {};

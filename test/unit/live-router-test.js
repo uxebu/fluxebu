@@ -4,7 +4,7 @@ var MockStoreResponse = require('../mock/store-response');
 
 describe('LiveRouter:', function() {
   require('./router-test')(LiveRouter);
-  
+
   describe('live functionality:', function() {
     var dispatcher, router, storeResponses, onData;
     beforeEach(function() {
@@ -13,7 +13,7 @@ describe('LiveRouter:', function() {
         b: MockStoreResponse('value B'),
         c: MockStoreResponse('value C')
       };
-      dispatcher = new MockDispatcher;
+      dispatcher = new MockDispatcher();
       dispatcher.dispatch.returns(storeResponses);
       onData = sinon.spy();
       router = new LiveRouter(dispatcher, onData);

@@ -1,3 +1,5 @@
+'use strict';
+
 var Router = require('./Router');
 
 function LiveRouter(dispatcher) {
