@@ -93,9 +93,6 @@ function mockStore() {
 }
 
 function asyncStore(value) {
-  var storeResponse = new MockStoreResponse();
-  storeResponse.query = function(callback) {
-    process.nextTick(function() { callback(value); });
-  };
+  var storeResponse = MockStoreResponse.async(value);
   return {notify: function() { return storeResponse; }};
 }

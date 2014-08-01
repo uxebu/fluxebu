@@ -1,19 +1,10 @@
 var Router = require('../../src/router');
 var MockDispatcher = require('../mock/dispatcher');
+var MockStoreResponse = require('../mock/store-response');
 
 describe('Router', function() {
   routerSuite(Router);
 });
-
-function storeResponseMock(data) {
-  return {
-    query: function(callback) {
-      process.nextTick(function() {
-        callback(data);
-      });
-    }
-  };
-}
 
 function routerSuite(Router) {
   var dispatcher, router;
@@ -29,8 +20,8 @@ function routerSuite(Router) {
   describe('pattern matching', function() {
     var arbitraryStoreData = {arbitrary: 'data'};
     beforeEach(function() {
-      dispatcher.dispatch = sinon.spy(function() {
-        return {arbitrary: storeResponseMock(arbitraryStoreData)};
+      dispatcher.dispatch.returns({
+        arbitrary: MockStoreResponse.async(arbitraryStoreData)
       });
       router.addRoute('/arbitrary/:id(\\d+)', ['arbitrary']);
     });
@@ -135,9 +126,9 @@ function routerSuite(Router) {
     beforeEach(function() {
       router.addRoute('/', ['a', 'b', 'c']);
       storeResponsesReturnedByDispatcher = {
-        a: storeResponseMock(dataA),
-        b: storeResponseMock(dataB),
-        c: storeResponseMock(dataC)
+        a: MockStoreResponse.async(dataA),
+        b: MockStoreResponse.async(dataB),
+        c: MockStoreResponse.async(dataC)
       };
       dispatcher.dispatch = function() {
         return storeResponsesReturnedByDispatcher;
