@@ -4,6 +4,8 @@ var parseUrl = require('url').parse;
 
 var routes = require('routes');
 
+var util = require('./util');
+var queryStoreResponses = util.queryStoreResponses;
 var slice = Array.prototype.slice;
 
 function Router(dispatcher) {
@@ -25,36 +27,10 @@ Router.prototype = {
     return !!routes.match(this._routes, url.pathname);
   },
 
-  _resolveStoreResponses: function(storeResponses, storeNames, userData, callback) {
-    var collectedData = {};
-    var callArgs = [collectedData].concat(userData);
-
-    // el cheapo test whether all data has been collected.
-    // This should probably get replaced with something serious.
-    var checkDone = function() {
-      if (Object.keys(collectedData).sort().join() === storeNames.join()) {
-        callback.apply(null, callArgs);
-      }
-    };
-
-    if (storeNames.length) {
-      storeNames.forEach(function(storeName) {
-        var storeResponse = storeResponses[storeName];
-        if (storeResponse) {
-          storeResponse.query(function(data) {
-            collectedData[storeName] = data;
-            checkDone();
-          });
-        } else if (storeName in storeResponses) {
-          collectedData[storeName] = storeResponse;
-          checkDone();
-        } else {
-          throw TypeError('No store registered with name ' + storeName);
-        }
-      });
-    } else {
-      callback.apply(null, callArgs);
-    }
+  _resolveStoreResponses: function(storeResponses, userData, callback) {
+    queryStoreResponses(storeResponses, function(collectedData) {
+      callback.apply(null, [collectedData].concat(userData));
+    });
   },
 
   handleUrl: function(url, data, callback) {
@@ -76,7 +52,15 @@ Router.prototype = {
     var storeNames = this._routeStores[index].slice().sort();
     var userData = this._userData[index];
     var storeResponses = this.dispatcher.dispatch('route', payload);
-    this._resolveStoreResponses(storeResponses, storeNames, userData, callback);
+    var neededStoreResponses = {};
+    storeNames.forEach(function(storeName) {
+      if (storeName in storeResponses) {
+        neededStoreResponses[storeName] = storeResponses[storeName];
+      } else {
+        throw TypeError('No store registered with name ' + storeName);
+      }
+    });
+    this._resolveStoreResponses(neededStoreResponses, userData, callback);
     return true;
   }
 };

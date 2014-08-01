@@ -1,17 +1,17 @@
-function MockStoreResponse(value, _call) {
+function MockStoreResponse(value, call) {
   var subscriptions = [];
-  if (!_call) {
-    _call = function(f, arg) { f(arg); };
+  if (!call) {
+    call = function(f, arg) { f(arg); };
   }
 
   var response = this instanceof MockStoreResponse ? this : {};
 
   response.query = sinon.spy(function(callback) {
-    _call(callback, value);
+    call(callback, value);
   });
   response.subscribe = sinon.spy(function(callback) {
     subscriptions.push(callback);
-    _call(callback, value);
+    call(callback, value);
   });
   response.unsubscribe = sinon.spy(function(callback) {
     var index = subscriptions.indexOf(callback);
@@ -21,7 +21,7 @@ function MockStoreResponse(value, _call) {
   });
   response.publishUpdate = function(data) {
     value = data;
-    subscriptions.forEach(function(listener) { _call(listener, data); });
+    subscriptions.forEach(function(listener) { call(listener, data); });
   };
 
   return response;
