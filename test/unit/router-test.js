@@ -1,9 +1,10 @@
 var Router = require('../../src/router');
+var MockDispatcher = require('../mock/dispatcher');
 
 describe('Router', function() {
   var dispatcher, router;
   beforeEach(function() {
-    dispatcher = {dispatch: sinon.stub().returns({})};
+    dispatcher = new MockDispatcher();
     router = new Router(dispatcher);
   });
 
