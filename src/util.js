@@ -1,6 +1,6 @@
 'use strict';
 
-exports.queryStoreResponses = function(storeResponses, callback) {
+exports.queryAll = function(storeResponses, callback) {
   var pending = [];
   var collectedData = {};
   var isQuerying = true;

@@ -5,7 +5,7 @@ var parseUrl = require('url').parse;
 var routes = require('routes');
 
 var util = require('./util');
-var queryStoreResponses = util.queryStoreResponses;
+var queryAll = util.queryAll;
 var slice = Array.prototype.slice;
 
 function Router(dispatcher) {
@@ -28,7 +28,7 @@ Router.prototype = {
   },
 
   _resolveStoreResponses: function(storeResponses, userData, callback) {
-    queryStoreResponses(storeResponses, function(collectedData) {
+    queryAll(storeResponses, function(collectedData) {
       callback.apply(null, [collectedData].concat(userData));
     });
   },
