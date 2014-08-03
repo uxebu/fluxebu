@@ -29,6 +29,17 @@ describe('FutureStoreResponse:', function() {
     expect(wrapped.subscribe).toHaveBeenCalledWith(callbacks[2]);
   });
 
+  it('can handle unsubscriptions of unregistered callbacks', function() {
+    callbacks.forEach(proxy.subscribe, proxy);
+
+    proxy.unsubscribe(function() {});
+    proxy.resolve(wrapped);
+
+    expect(wrapped.subscribe).toHaveBeenCalledWith(callbacks[0]);
+    expect(wrapped.subscribe).toHaveBeenCalledWith(callbacks[1]);
+    expect(wrapped.subscribe).toHaveBeenCalledWith(callbacks[2]);
+  });
+
   describe('once resolved:', function() {
     beforeEach(function() {
       proxy.resolve(wrapped);
