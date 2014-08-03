@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "description": "An approach to flux that works for server-side (stateless) and client-side (stateful) component rendering.",
   "scripts": {
-    "test": "mocha -R dot -r setup-referee-sinon/globals $MOCHA_ARGS test/unit",
+    "test": "${MOCHA_CMD:-mocha} -R dot -r setup-referee-sinon/globals $MOCHA_ARGS test/unit",
     "test-watch": "MOCHA_ARGS=\"-w -R min $MOCHA_ARGS\" npm test",
+    "coverage": "MOCHA_CMD='istanbul cover --hook-into-context --print detail _mocha -- ' npm test",
     "lint": "jshint src test"
   },
   "repository": {
@@ -27,7 +28,8 @@
   "homepage": "https://github.com/uxebu/fluxebu",
   "devDependencies": {
     "mocha": "^1.21.3",
-    "setup-referee-sinon": "^0.2.0"
+    "setup-referee-sinon": "^0.2.0",
+    "istanbul": "~0.3.0"
   },
   "dependencies": {
     "routes": "^1.2.0"
