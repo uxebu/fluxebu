@@ -1,5 +1,5 @@
 var Dispatcher = require('../../src/dispatcher');
-var MockStoreResponse = require('../mock/store-response');
+var mockStoreResponse = require('../mock/store-response');
 
 describe('dispatcher', function() {
   var dispatcher, storeA, storeB, storeC;
@@ -93,6 +93,6 @@ function mockStore() {
 }
 
 function asyncStore(value) {
-  var storeResponse = MockStoreResponse.async(value);
+  var storeResponse = mockStoreResponse.async(value);
   return {notify: function() { return storeResponse; }};
 }

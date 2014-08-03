@@ -1,6 +1,6 @@
 var LiveRouter = require('../../src/live-router');
 var MockDispatcher = require('../mock/dispatcher');
-var MockStoreResponse = require('../mock/store-response');
+var mockStoreResponse = require('../mock/store-response');
 
 describe('LiveRouter:', function() {
   require('./router-test')(LiveRouter);
@@ -9,9 +9,9 @@ describe('LiveRouter:', function() {
     var dispatcher, router, storeResponses, onData;
     beforeEach(function() {
       storeResponses = {
-        a: MockStoreResponse('value A'),
-        b: MockStoreResponse('value B'),
-        c: MockStoreResponse('value C')
+        a: mockStoreResponse.sync('value A'),
+        b: mockStoreResponse.sync('value B'),
+        c: mockStoreResponse.sync('value C')
       };
       dispatcher = new MockDispatcher();
       dispatcher.dispatch.returns(storeResponses);

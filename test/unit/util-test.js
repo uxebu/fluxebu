@@ -1,5 +1,5 @@
 var util = require('../../src/util');
-var MockStoreResponse = require('../mock/store-response');
+var mockStoreResponse = require('../mock/store-response');
 
 describe('store response utilities:', function() {
   describe('queryAll:', function() {
@@ -17,8 +17,8 @@ describe('store response utilities:', function() {
       var storeResponses, a, b;
       beforeEach(function() {
         storeResponses = {
-          a: unresolvedStoreResponse(MockStoreResponse('value A')),
-          b: unresolvedStoreResponse(MockStoreResponse('value B')),
+          a: mockStoreResponse.sync.unresolved('value A'),
+          b: mockStoreResponse.sync.unresolved('value B'),
           c: null
         };
         a = storeResponses.a;
@@ -76,8 +76,8 @@ describe('store response utilities:', function() {
       describe('unsubscribe:', function() {
         var a, b, storeResponses, unsubscribe, onUpdate;
         beforeEach(function() {
-          a = MockStoreResponse('value A');
-          b = MockStoreResponse('value B');
+          a = mockStoreResponse.sync('value A');
+          b = mockStoreResponse.sync('value B');
           storeResponses = {a: a, b: b, c: null};
           onUpdate = sinon.spy();
           unsubscribe = util.subscribeToAll(storeResponses, noop, onUpdate);
@@ -105,9 +105,9 @@ function testBasicQuerying(query) {
   var storeResponses;
   beforeEach(function() {
     storeResponses = {
-      a: MockStoreResponse('value A'),
-      b: MockStoreResponse('value B', respondAfter(1)),
-      c: MockStoreResponse.async('value C')
+      a: mockStoreResponse.sync('value A'),
+      b: mockStoreResponse.sync('value B', respondAfter(1)),
+      c: mockStoreResponse.async('value C')
     };
   });
 
@@ -124,9 +124,9 @@ function testBasicQuerying(query) {
 
   it('can handle purely synchronous store responses', function(done) {
     storeResponses = {
-      a: MockStoreResponse('value A'),
-      b: MockStoreResponse('value B'),
-      c: MockStoreResponse('value C')
+      a: mockStoreResponse.sync('value A'),
+      b: mockStoreResponse.sync('value B'),
+      c: mockStoreResponse.sync('value C')
     };
     query(storeResponses, function(collectedData) {
       expect(collectedData).toEqual({
@@ -161,37 +161,6 @@ function testBasicQuerying(query) {
 
 function respondAfter(time) {
   return function(fn, value) { setTimeout(function() { fn(value); }, time); };
-}
-
-function unresolvedStoreResponse(mockStoreResponse) {
-  var query = mockStoreResponse.query, subscribe = mockStoreResponse.subscribe;
-  var queries = [], subscriptions = [], isResolved = false;
-
-  mockStoreResponse.query = function(callback) {
-    if (isResolved) { return query.call(this, callback); }
-    else { queries.push(callback); }
-  };
-  mockStoreResponse.subscribe = function(callback) {
-    if (isResolved) { return subscribe.call(this, callback); }
-    else { subscriptions.push(callback); }
-  };
-  mockStoreResponse.unsubscribe = function(callback) {
-    if (isResolved) { return subscribe.call(this, callback); }
-    else {
-      var index = subscriptions.indexOf(callback);
-      if (index !== -1) {
-        subscriptions.splice(index, 1);
-      }
-    }
-  };
-  mockStoreResponse.resolve = function() {
-    isResolved = true;
-    queries.forEach(query, this);
-    subscriptions.forEach(subscribe, this);
-    queries = subscriptions = null;
-  };
-
-  return mockStoreResponse;
 }
 
 function noop() {}
