@@ -37,11 +37,6 @@ function queryStoreResponses(storeResponses, onComplete, onUpdate, query) {
     }
   }
 
-  function checkInitialDataDone() {
-    var didInvokeCallback = checkDone(pending, collectedData, onComplete);
-    if (didInvokeCallback) { collectedData = null; }
-  }
-
   each(storeResponses, function(storeResponse, name) {
     var onData;
     if (storeResponse) {
@@ -51,7 +46,7 @@ function queryStoreResponses(storeResponses, onComplete, onUpdate, query) {
           collectedData[name] = data;
           removeFromArray(pending, name);
           if (!isQuerying) {
-            checkInitialDataDone();
+            checkDone();
           }
         } else {
           var updatedData = {};
@@ -66,7 +61,7 @@ function queryStoreResponses(storeResponses, onComplete, onUpdate, query) {
   });
 
   isQuerying = false;
-  checkInitialDataDone();
+  checkDone();
 }
 
 function each(object, callback) {
