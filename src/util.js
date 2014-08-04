@@ -29,6 +29,14 @@ function queryStoreResponses(storeResponses, onComplete, onUpdate, query) {
   var collectedData = {};
   var isQuerying = true;
 
+  function checkDone() {
+    if (pending.length === 0) {
+      var data = collectedData;
+      collectedData = null;
+      onComplete(data);
+    }
+  }
+
   function checkInitialDataDone() {
     var didInvokeCallback = checkDone(pending, collectedData, onComplete);
     if (didInvokeCallback) { collectedData = null; }
@@ -72,14 +80,6 @@ function removeFromArray(array, value) {
   if (index !== -1) {
     array.splice(index, 1);
   }
-}
-
-function checkDone(pending, collectedData, callback) {
-  if (pending.length === 0) {
-    callback(collectedData);
-    return true;
-  }
-  return false;
 }
 
 function noop() {}

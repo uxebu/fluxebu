@@ -73,6 +73,17 @@ describe('store response utilities:', function() {
         a.resolve();
       });
 
+      it('can handle store updates from within the `onComplete` callback', function() {
+        storeResponses.a.resolve();
+        storeResponses.b.resolve();
+        function onUpdate() {}
+        util.subscribeToAll(storeResponses, function() {
+          expect(function() {
+            storeResponses.a.publishUpdate('new value A');
+          }).not.toThrow();
+        }, onUpdate);
+      });
+
       describe('unsubscribe:', function() {
         var a, b, storeResponses, unsubscribe, onUpdate;
         beforeEach(function() {

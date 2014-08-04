@@ -23,12 +23,12 @@ describe('LiveRouter:', function() {
 
     it('calls the `onData()` callback when store responses publish new data', function(done) {
       router.handleUrl('/a', null, function() {
-        var valueA = 'new value A', valueB = 'new value B';
+        var valueA = 'new value A', valueC = 'new value C';
         storeResponses.a.publishUpdate(valueA);
-        storeResponses.b.publishUpdate(valueB);
+        storeResponses.c.publishUpdate(valueC);
 
         expect(onData).toHaveBeenCalledWithMatch({a: valueA});
-        expect(onData).not.toHaveBeenCalledWithMatch({b: valueB});
+        expect(onData).not.toHaveBeenCalledWithMatch({c: valueC});
 
         done();
       });
