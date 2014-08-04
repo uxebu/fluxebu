@@ -25,7 +25,7 @@ describe('store response utilities:', function() {
         b = storeResponses.b;
       });
 
-      it('invokes the update callbacks about new values', function(done) {
+      it('invokes the update callback with new values', function(done) {
         util.subscribeToAll(storeResponses, noop, function(data) {
           expect(data).toMatch({a: newValue});
           done();
@@ -37,7 +37,7 @@ describe('store response utilities:', function() {
         a.publishUpdate(newValue);
       });
 
-      it('invokes the update callbacks about new values if store responses respond synchronously', function(done) {
+      it('invokes the update callback with new values if store responses respond synchronously', function(done) {
         a.resolve();
         b.resolve();
         util.subscribeToAll(storeResponses, noop, function(data) {
