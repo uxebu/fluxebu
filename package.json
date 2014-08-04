@@ -29,7 +29,8 @@
   "devDependencies": {
     "mocha": "^1.21.3",
     "setup-referee-sinon": "^0.2.0",
-    "istanbul": "~0.3.0"
+    "istanbul": "~0.3.0",
+    "jshint": "^2.5.2"
   },
   "dependencies": {
     "routes": "^1.2.0"
