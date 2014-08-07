@@ -4,6 +4,7 @@ fluxebu
 An URL-oriented approach to [Flux][] that works well for both server and browser.
 
 [![Build Status](https://travis-ci.org/uxebu/fluxebu.svg?branch=master)](https://travis-ci.org/uxebu/fluxebu)
+[![Coverage Status](https://img.shields.io/coveralls/uxebu/fluxebu.svg?branch=master)](https://coveralls.io/r/uxebu/fluxebu?branch=master)
 
 Aims
 ---
