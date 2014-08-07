@@ -1,41 +1,176 @@
 fluxebu
 ===
 
-An approach to flux that works for server-side (stateless) and client-side (stateful) component rendering.
+An URL-oriented approach to [Flux][] that works well for both server and browser.
+
 
 Aims
 ---
 
-This project aims to provide components for URL-routing and dispatching that follow the philosophy of [flux][], working for node.js servers and browsers.
+*fluxebu* aims to provide a small library that aids in building URL-oriented web
+applications with the same code running on the server and in the browser.
 
-Rendering a view (e. g. a [React][] component) has different implications on server and browser: While the browser has the notion of the “currently active view” which typically is “alive” and can receive updates from stores, there is no such thing on the server side. Quite the contrary, on the server the typical usecase is to dispatch route events to the stores and to use the provided data once. In addition, servers must be able to handle requests asynchronously. That means that stores that provide request specific data (like stores that depend on the current route or provide user specific data) must be able to provide concurrent data views that are tied to one specific dispatched “request” or “route” event. 
+It is built with [React][] in mind, but *fluxebu* is completely framework-agnostic and can work in any setup.
+
+*fluxebu* is built around these core ideas:
+
+- The same code can work on the server and in the browser. Platform differences are handled through different implementations.
+- Route configuration is declarative and short, so that it is easy to read.
+- Specific tasks (like creating, mounting and updating React components) are not handled by the library.
+- URL changes are just actions published through the dispatcher.
+
+
+Contstraints
+---
+
+Routing and dispatching on the server and in the browser have a fundamental difference:
+
+A node.js server must be able to handle multiple concurrent requests. Therefore it is not possible to have a global stateful dispatching system. Furthermore, store updates are not relevant: The server responds with the initial response of the relevant stores.
+
+In the browser, on the other hand, the system has a notion of the *currently active URL/view.* Updates from stores must be reflected, and the dispatcher should be able to enforce that only one action can be dispatched concurrently.
+
+Two possible solutions to handle these differences are:
+
+1. A new dispatcher is created for every incoming requests. If stores are stateful, they might also be created for every requests.
+2. Dispatcher and stores are able to handle concurrent actions and data queries. This is the approach that *fluxebu* is following.
 
 
 Ideas and Concepts
 ---
 
-- Routes are a central concept for *fluxebu.* Route configuration must work on browsers and server-side.
-- Route changes are just actions that get dispatched.
-- Stores that depend on request-specific data (URL, user information, etc.) must provide data views that are tied to specific request. 
+Following the *Flux* paradigm, an application consists of a *dispatcher* that notifies stores about actions and *stores* that update their internal state in reaction to actions. *fluxebu* adds another component: the *router.*
+
+### The Dispatcher and Stores
+
+Stores can be registered with the dispatcher by name. The dispatcher will broadcast any dispatched action by calling the `notify(actionType, payload, waitFor)` method of every registered store. In order to provide data in reaction to an action, stores may return a *store response.* This is a synchronous operation. The dispatcher returns the aggregated store responses as an object where store names map to store responses.
+
+If a store needs data from another store, it can call the `waitFor(storeName)` function passed to `notify`. `waitFor` will return a store response, which can be queried as needed.
 
 
-  [React]: http://facebook.github.io/react/
-  [flux]: http://facebook.github.io/react/docs/flux-overview.html
+### Store Responses
+
+Since dispatcher – and consequently – all registered stores cannot keep any URL-/request-related state on the server, stores provide data by returning a *store response object* from the `notify()` method.
+
+Store responses are objects that encapsulate action-specific state and asynchronous behaviour that may be needed to query the underlying data source. In the case that the needed store has not been notified yet, a “future” store response is provided.
+
+The contract that store responses have to fulfill, is:
+
+- The `query(callback)` method invokes any passed-in callback with the represented data as soon as it is available.
+- The `subscribe(callback)` method works like `query()`, but will invoke the callback repeatedly every time new data becomes available. This is only useful for the browser, when the *currently active view* shall be updated with changed data.
+- `unsubscribe(callback)` can be used to unsubscribe any previously registered callback.
+
+
+### Routing
+
+The router is used to match URLs against the set of known routes. A route consists of a *pattern* and the names of the stores that are relevant to a route. In addition, it is possible to add *user data* to a route. That could be a React component constructor and actions belonging to the route.
+
+```js
+// Setup routes
+router
+  //        route pattern,       names of stores needed,           user data ...
+  .addRoute('/',                 ['news', 'blog', 'user-session'], Homepage, actions)
+  .addRoute('/blog/:page(\\d+)', ['blog', 'user-session'],         BlogList, actions)
+  .addRoute('/blog/:slug?',      ['blog', 'user-session'],         BlogArticle, actions);
+```
+
+Routing is simple: when the router is asked to handle an URL, it will dispatch a `'route'` actions and wait for all relevant stores to provide data:
+
+```js
+router.handleRoute(url, null, function(data, Component, actions) {
+  // here, data will be an object where keys are store names and values are
+  // data returned by the stores
+
+  // Component and actions are the user data attached to the route
+
+  // use the data ... e.g. to render a React component
+  React.renderComponent(Component(merge(data, {actions: actions})), document.body);
+});
+```
+
+The second parameter to `handleRoute` is *user data* that will be passed to the stores as part of the action payload. It could be used to provide cached values to the stores, e.g. to prevent refetches of already known data.
 
 TODOs
 ---
 
-- Convenience API on the router
-- Router implementation that has a notion of the “current route” and can subscribe to stores to provide data updates.
-  It also has to cancel all live subscriptions as soon as the route changes.
-- Example stores and an example Application
-- Add a dispatcher that can block until a dispatch is finished. Useful for the browser, really bad for the server.
+- A router implementation that has a notion of the “current route” and can subscribe to stores to provide data updates.
+  It also has to cancel all live subscriptions as soon as the route changes. *Work in progress*
+- Allow routes to have names
+- Make callbacks accept an `error` parameter as in node.js
+- Think harder about naming
+- A “synchronized” dispatcher for the browser that only allows one action to be dispatched at the same time.
   Questions: What does “finished” mean? All collected store responses have invoked the callback to `query()`?
+- Example stores and an example application
 
 
-Approach to Store Synchronization
+Stripped-Down Bootstrapping Example
 ---
 
-- `Store#notify` is called with `actionType: String, payload: Object, waitFor: function(name: string): StoreResponse`. This makes it possible to add per-dispatch store synchronization as in Facebook’s original *flux.*
-- `waitFor()` returns the store response of the desired named store. If it hasn’t become available in the current dispatch
-   cycle, `waitFor` returns a proxy store response that delegates to the desired view as soon as it becomes available.
+### bootstrap.js
+
+```js
+function bootstrap(router, dispatcher, environmentSpecificStores) {
+  registerStores(environmentSpecificStores);
+  registerStores(createCommonStores);
+
+  var actions = {
+    // ...
+  };
+
+  router
+    .addRoute('/foo', ['foo', 'common'], FooComponent, actions)
+    // ...
+    .addRoute('/bar', ['bar', 'common'], BarComponent, actions);
+}
+
+function registerStores(dispatcher, stores) {
+  for (name in stores) {
+    dispatcher.addStore(name, stores[name]);
+  }
+}
+```
+
+### server.js
+
+```js
+var dispatcher = new Dispatcher();
+var router = new Router(dispatcher);
+var environmentSpecificStores = createServerSpecificStores();
+
+bootstrap(router, dispatcher, environmentSpecificStores);
+
+function myConnectMiddleware(request, response, next) {
+  if (router.canHandleUrl(request.url)) {
+    router.handleUrl(request.url, state, function(data, Component) {
+      React.renderComponentToString(Component(data));
+      // ... respond here
+    });
+  } else {
+    next();
+  }
+}
+```
+
+
+### browser.js
+
+```js
+var dispatcher = new SynchronizedDispatcher();
+var router = new LiveRouter(dispatcher);
+var environmentSpecificStores = createBrowserSpecificStores();
+
+bootstrap(router, dispatcher, environmentSpecificStores);
+
+function onUrlChange(url, state) { // onpopstate, link click, form submit
+  if (router.canHandleUrl(request.url)) {
+    router.handleUrl(request.url, null, function(data, Component, actions) {
+      var props = merge(data, {actions: actions});
+      React.renderComponent(Component(props), document.body);
+      history.pushState(data, null, url);
+    });
+  }
+}
+```
+
+
+  [Flux]: http://facebook.github.io/react/docs/flux-overview.html
+  [React]: http://facebook.github.io/react/
