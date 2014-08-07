@@ -1,6 +1,6 @@
 'use strict';
 
-var Router = require('./Router');
+var Router = require('./router');
 var util = require('./util'), subscribeToAll = util.subscribeToAll;
 
 function LiveRouter(dispatcher, onUpdate) {
