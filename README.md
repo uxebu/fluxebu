@@ -40,7 +40,7 @@ Two possible solutions to handle these differences are:
 Ideas and Concepts
 ---
 
-Following the *Flux* paradigm, an application consists of a *dispatcher* that notifies stores about actions and *stores* that update their internal state in reaction to actions. *fluxebu* adds another component: the *router.*
+Following the [Flux][] paradigm, an application consists of a *dispatcher* that notifies stores about actions and *stores* that update their internal state in reaction to actions. *fluxebu* adds another component: the *router.*
 
 ### The Dispatcher and Stores
 
@@ -69,13 +69,13 @@ The router is used to match URLs against the set of known routes. A route consis
 ```js
 // Setup routes
 router
-  //        route pattern,       names of stores needed,           user data ...
+  // route pattern,              names of stores needed,           user data ...
   .addRoute('/',                 ['news', 'blog', 'user-session'], Homepage, actions)
   .addRoute('/blog/:page(\\d+)', ['blog', 'user-session'],         BlogList, actions)
   .addRoute('/blog/:slug?',      ['blog', 'user-session'],         BlogArticle, actions);
 ```
 
-Routing is simple: when the router is asked to handle an URL, it will dispatch a `'route'` actions and wait for all relevant stores to provide data:
+Routing is simple: when the router is asked to handle an URL, it will dispatch a `'route'` action and wait for all relevant stores to provide data:
 
 ```js
 router.handleRoute(url, null, function(data, Component, actions) {
@@ -112,16 +112,27 @@ Stripped-Down Bootstrapping Example
 ```js
 function bootstrap(router, dispatcher, environmentSpecificStores) {
   registerStores(environmentSpecificStores);
-  registerStores(createCommonStores);
+  registerStores(createCommonStores());
 
-  var actions = {
+  var fooActions = {
+    commentOnFoo: function(id, data) {
+      // manipulate data
+      dispatcher.dispatch(actionType.COMMENT_FOO, {
+        id: id,
+        data: data
+      });
+    },
+    // ...
+  };
+
+  var barActions = {
     // ...
   };
 
   router
-    .addRoute('/foo', ['foo', 'common'], FooComponent, actions)
+    .addRoute('/foo', ['foo', 'common'], FooComponent, fooActions)
     // ...
-    .addRoute('/bar', ['bar', 'common'], BarComponent, actions);
+    .addRoute('/bar', ['bar', 'common'], BarComponent, barActions);
 }
 
 function registerStores(dispatcher, stores) {
@@ -143,7 +154,7 @@ bootstrap(router, dispatcher, environmentSpecificStores);
 function myConnectMiddleware(request, response, next) {
   if (router.canHandleUrl(request.url)) {
     router.handleUrl(request.url, state, function(data, Component) {
-      React.renderComponentToString(Component(data));
+      var htmlString = React.renderComponentToString(Component(data));
       // ... respond here
     });
   } else {
@@ -174,5 +185,5 @@ function onUrlChange(url, state) { // onpopstate, link click, form submit
 ```
 
 
-  [Flux]: http://facebook.github.io/react/docs/flux-overview.html
+  [Flux]: http://facebook.github.io/flux/
   [React]: http://facebook.github.io/react/
