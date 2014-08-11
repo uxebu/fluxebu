@@ -134,7 +134,7 @@ function bootstrap(router, dispatcher, environmentSpecificStores) {
 
 function registerStores(dispatcher, stores) {
   for (name in stores) {
-    dispatcher.addStore(name, stores[name]);
+    dispatcher.registerStore(name, stores[name]);
   }
 }
 ```
