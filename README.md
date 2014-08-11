@@ -94,8 +94,6 @@ The second parameter to `handleRoute` is *user data* that will be passed to the 
 TODOs
 ---
 
-- A router implementation that has a notion of the “current route” and can subscribe to stores to provide data updates.
-  It also has to cancel all live subscriptions as soon as the route changes. *Work in progress*
 - Allow routes to have names
 - Make callbacks accept an `error` parameter as in node.js
 - Think harder about naming
