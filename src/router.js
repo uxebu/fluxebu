@@ -10,16 +10,18 @@ var slice = Array.prototype.slice;
 
 function Router(dispatcher) {
   this._routes = [];
-  this._routeStores = [];
-  this._userData = [];
+  this._routeData = [];
   this.dispatcher = dispatcher;
 }
 
 Router.prototype = {
-  addRoute: function(pattern, storeNames) {
+  addRoute: function(id, pattern, storeNames) {
     this._routes.push(routes.Route(pattern));
-    this._routeStores.push(storeNames);
-    this._userData.push(slice.call(arguments, 2));
+    this._routeData.push({
+      id: id,
+      storeNames: storeNames,
+      userData: slice.call(arguments, 3)
+    });
     return this;
   },
   canHandleUrl: function(url) {
@@ -38,29 +40,29 @@ Router.prototype = {
     var match = routes.match(this._routes, url.pathname);
     if (!match) { return false; }
 
+    var index = (match.next - 1);
+    var routeData = this._routeData[index];
     var payload = {
       params: match.params,
       splats: match.splats,
       hash: url.hash,
-      pathname: url.pathname,
+      id: routeData.id,
       path: url.path,
+      pathname: url.pathname,
       query: url.query,
       userData: data
     };
 
-    var index = (match.next - 1);
-    var storeNames = this._routeStores[index].slice().sort();
-    var userData = this._userData[index];
     var storeResponses = this.dispatcher.dispatch('route', payload);
-    var neededStoreResponses = {};
-    storeNames.forEach(function(storeName) {
+    var neededResponses = {};
+    routeData.storeNames.forEach(function(storeName) {
       if (storeName in storeResponses) {
-        neededStoreResponses[storeName] = storeResponses[storeName];
+        neededResponses[storeName] = storeResponses[storeName];
       } else {
         throw TypeError('No store registered with name ' + storeName);
       }
     });
-    this.resolveStoreResponses(neededStoreResponses, userData, callback);
+    this.resolveStoreResponses(neededResponses, routeData.userData, callback);
     return true;
   }
 };

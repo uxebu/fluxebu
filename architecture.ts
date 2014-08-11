@@ -127,17 +127,6 @@ interface RouteInformation {
 }
 
 /**
- * Contains a route definition that can be used with Router.addRoutes
- */
-interface RouteTuple {
-  /** names of needed stores */
-  0: Array<string>;
-
-  /** any user data */
-  [index: number]: any;
-}
-
-/**
  * Routers provide mechanics that allow to collect data from different stores
  * in for specific routes.
  */
@@ -170,6 +159,7 @@ interface Router {
   /**
    * Adds a route
    *
+   * @param id - An identifier for the route
    * @param pattern - The pattern of the route to register
    * @param stores - The name of the stores to query for this route.
    *    The names must match the names that have been used to register stores
@@ -178,22 +168,10 @@ interface Router {
    *    of `handleRoute`.
    * @returns The router instance
    */
-  addRoute(pattern: string, stores: Array<string>, ...userData: any[]): Router;
+  addRoute(id: any, pattern: string, stores: Array<string>, ...userData: any[]): Router;
 
   /**
    * Adds a route where the pattern is a regular expression rather than a string.
    */
-  addRoute(pattern: RegExp, stores: Array<string>, ...userData: any[]): Router;
-
-  /**
-   * Adds all routes from an object: keys are patterns, values are arrays
-   * containing an array with store names and user data
-   */
-  addRoutes(routes: MapObject<RouteTuple>): Router;
-
-  /**
-   * Adds all routes from a list of pairs: the first member must be a string or
-   * a regular expression, the second a RouteTuple;
-   */
-  addRoutes(...routes: Array<Pair<any, RouteTuple>>): Router;
+  addRoute(id: any, pattern: RegExp, stores: Array<string>, ...userData: any[]): Router;
 }

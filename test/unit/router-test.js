@@ -2,7 +2,7 @@ var Router = require('../../src/router');
 var MockDispatcher = require('../mock/dispatcher');
 var mockStoreResponse = require('../mock/store-response');
 
-describe('Router', function() {
+describe('Router:', function() {
   routerSuite(Router);
 });
 
@@ -23,7 +23,7 @@ function routerSuite(Router) {
       dispatcher.dispatch.returns({
         arbitrary: mockStoreResponse.async(arbitraryStoreData)
       });
-      router.addRoute('/arbitrary/:id(\\d+)', ['arbitrary']);
+      router.addRoute('arbitrary', '/arbitrary/:id(\\d+)', ['arbitrary']);
     });
 
     describe('`canHandle()`', function() {
@@ -85,9 +85,9 @@ function routerSuite(Router) {
   });
 
   describe('dispatching', function() {
-    var userData = {additional: 'user data'};
+    var userData = {additional: 'user data'}, routeId = {arbitrary: 'id'};
     beforeEach(function() {
-      router.addRoute('/:name/*/:id.*', [], userData);
+      router.addRoute(routeId, '/:name/*/:id.*', [], userData);
     });
 
     it('exposes the passed in dispatcher as `dispatcher` property', function() {
@@ -108,7 +108,16 @@ function routerSuite(Router) {
       });
     });
 
-    it('adds the provided user data to the "route" action payload', function(done) {
+    it('adds the provided id to the payload of a "route" actio', function(done) {
+      router.handleUrl('/foo/a/123.json', null, function() {
+        expect(dispatcher.dispatch).toHaveBeenCalledWithMatch('route', {
+          test: function(object) { return object.id === routeId; }
+        });
+        done();
+      });
+    });
+
+    it('adds the provided user data to the payload of a "route" action', function(done) {
       var userData = {additional: userData};
       router.handleUrl('/foo/a/123.json', userData, function() {
         expect(dispatcher.dispatch).toHaveBeenCalledWithMatch('route', {
@@ -124,7 +133,7 @@ function routerSuite(Router) {
     var dataA = 123, dataB = 'bcd', dataC = {foo: 'bar'};
 
     beforeEach(function() {
-      router.addRoute('/', ['a', 'b', 'c']);
+      router.addRoute(null, '/', ['a', 'b', 'c']);
       storeResponsesReturnedByDispatcher = {
         a: mockStoreResponse.async(dataA),
         b: mockStoreResponse.async(dataB),
@@ -167,10 +176,10 @@ function routerSuite(Router) {
     });
   });
 
-  describe('route user data', function() {
+  describe('route user data:', function() {
     var routeDataA = '123', routeDataB = {arbitrary: 'arbitrary'};
     beforeEach(function() {
-      router.addRoute('/', [], routeDataA, routeDataB);
+      router.addRoute(null, '/', [], routeDataA, routeDataB);
     });
 
     it('passes user data for a route to the callback of `handleUrl`', function(done) {

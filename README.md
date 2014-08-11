@@ -69,10 +69,10 @@ The router is used to match URLs against the set of known routes. A route consis
 ```js
 // Setup routes
 router
-  // route pattern,              names of stores needed,           user data ...
-  .addRoute('/',                 ['news', 'blog', 'user-session'], Homepage, actions)
-  .addRoute('/blog/:page(\\d+)', ['blog', 'user-session'],         BlogList, actions)
-  .addRoute('/blog/:slug?',      ['blog', 'user-session'],         BlogArticle, actions);
+  // route id,           route pattern,        names of stores needed,           user data ...
+  .addRoute('home',      '/',                  ['news', 'blog', 'user-session'], Homepage, actions)
+  .addRoute('blog',      '/blog/:page(\\d+)?', ['blog', 'user-session'],         BlogList, actions)
+  .addRoute('blog-post', '/blog/:slug?',       ['blog', 'user-session'],         BlogArticle, actions);
 ```
 
 Routing is simple: when the router is asked to handle an URL, it will dispatch a `'route'` action and wait for all relevant stores to provide data:
@@ -94,7 +94,6 @@ The second parameter to `handleRoute` is *user data* that will be passed to the 
 TODOs
 ---
 
-- Allow routes to have names
 - Make callbacks accept an `error` parameter as in node.js
 - Think harder about naming
 - A “synchronized” dispatcher for the browser that only allows one action to be dispatched at the same time.
@@ -128,9 +127,9 @@ function bootstrap(router, dispatcher, environmentSpecificStores) {
   };
 
   router
-    .addRoute('/foo', ['foo', 'common'], FooComponent, fooActions)
+    .addRoute('foo', '/foo', ['foo', 'common'], FooComponent, fooActions)
     // ...
-    .addRoute('/bar', ['bar', 'common'], BarComponent, barActions);
+    .addRoute('bar', '/bar', ['bar', 'common'], BarComponent, barActions);
 }
 
 function registerStores(dispatcher, stores) {

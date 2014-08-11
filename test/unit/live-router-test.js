@@ -17,8 +17,8 @@ describe('LiveRouter:', function() {
       dispatcher.dispatch.returns(storeResponses);
       onUpdate = sinon.spy();
       router = new LiveRouter(dispatcher, onUpdate);
-      router.addRoute('/a', ['a', 'b']);
-      router.addRoute('/b', ['b', 'c']);
+      router.addRoute('a', '/a', ['a', 'b']);
+      router.addRoute('b', '/b', ['b', 'c']);
     });
 
     it('calls the `onUpdate()` callback when store responses publish new data', function(done) {
