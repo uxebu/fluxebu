@@ -5,12 +5,18 @@ var util = require('./util'), subscribeToAll = util.subscribeToAll;
 
 function LiveRouter(dispatcher, onUpdate) {
   Router.call(this, dispatcher);
+  this._unsubscribe = null;
   this.onUpdate = onUpdate;
 }
 
 var proto = LiveRouter.prototype = Object.create(Router.prototype);
-proto._resolveStoreResponses = function(storeResponses, userData, callback) {
-  subscribeToAll(storeResponses, function(collectedData) {
+proto.resolveStoreResponses = function(storeResponses, userData, callback) {
+  var unsubscribe = this._unsubscribe;
+  for (var name in unsubscribe) {
+    unsubscribe[name]();
+  }
+
+  this._unsubscribe = subscribeToAll(storeResponses, function(collectedData) {
     callback.apply(null, [collectedData].concat(userData));
   }, this.onUpdate);
 };

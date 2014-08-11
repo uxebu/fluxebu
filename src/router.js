@@ -27,7 +27,7 @@ Router.prototype = {
     return !!routes.match(this._routes, url.pathname);
   },
 
-  _resolveStoreResponses: function(storeResponses, userData, callback) {
+  resolveStoreResponses: function(storeResponses, userData, callback) {
     queryAll(storeResponses, function(collectedData) {
       callback.apply(null, [collectedData].concat(userData));
     });
@@ -60,7 +60,7 @@ Router.prototype = {
         throw TypeError('No store registered with name ' + storeName);
       }
     });
-    this._resolveStoreResponses(neededStoreResponses, userData, callback);
+    this.resolveStoreResponses(neededStoreResponses, userData, callback);
     return true;
   }
 };

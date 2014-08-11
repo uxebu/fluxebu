@@ -54,5 +54,31 @@ describe('LiveRouter:', function() {
       storeResponses.a.publishUpdate(newValueA);
       storeResponses.b.resolve();
     });
+
+    it('does not invoke the update callback of no-longer needed stores after a route change', function(done) {
+      router.handleUrl('/a', null, function() {
+        router.handleUrl('/b', null, function() {
+          storeResponses.a.publishUpdate('newValueA');
+          expect(onUpdate).not.toHaveBeenCalledWithMatch({a: 'newValueA'});
+          done();
+        });
+      });
+
+      storeResponses.a.resolve();
+      storeResponses.b.resolve();
+    });
+
+    it('does not unsubscribe from store responses that are used across routes', function(done) {
+      router.handleUrl('/a', null, function() {
+        router.handleUrl('/b', null, function() {
+          storeResponses.b.publishUpdate('newValueB');
+          expect(onUpdate).toHaveBeenCalledWithMatch({b: 'newValueB'});
+          done();
+        });
+      });
+
+      storeResponses.a.resolve();
+      storeResponses.b.resolve();
+    });
   });
 });
