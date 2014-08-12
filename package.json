@@ -2,6 +2,7 @@
   "name": "fluxebu",
   "version": "0.1.0",
   "description": "An approach to flux that works for server-side (stateless) and client-side (stateful) component rendering.",
+  "main": "lib",
   "scripts": {
     "test": "${MOCHA_CMD:-mocha} -R dot -r setup-referee-sinon/globals $MOCHA_ARGS test/unit",
     "test-watch": "MOCHA_ARGS=\"-w -R min $MOCHA_ARGS\" npm test",
