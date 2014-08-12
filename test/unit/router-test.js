@@ -50,7 +50,8 @@ function routerSuite(Router) {
       });
 
       it('handles paths if a matching pattern has been registered', function(done) {
-        router.handleUrl('/arbitrary/123', null, function(collectedData) {
+        router.handleUrl('/arbitrary/123', null, function(error, collectedData) {
+          expect(error).toBeNull();
           expect(collectedData).toEqual({arbitrary: arbitraryStoreData});
           done();
         });
@@ -61,7 +62,8 @@ function routerSuite(Router) {
       });
 
       it('handles a fully qualified URL if a matching pattern has been registered', function(done) {
-        router.handleUrl('http://example.org/arbitrary/345', null, function(collectedData) {
+        router.handleUrl('http://example.org/arbitrary/345', null, function(error, collectedData) {
+          expect(error).toBeNull();
           expect(collectedData).toEqual({arbitrary: arbitraryStoreData});
           done();
         });
@@ -72,7 +74,8 @@ function routerSuite(Router) {
       });
 
       it('handles a path containing query parameters', function(done) {
-        expect(router.handleUrl('/arbitrary/123?foo=bar', null, function(collectedData) {
+        expect(router.handleUrl('/arbitrary/123?foo=bar', null, function(error, collectedData) {
+          expect(error).toBeNull();
           expect(collectedData).toEqual({arbitrary: arbitraryStoreData});
           done();
         }));
@@ -144,7 +147,8 @@ function routerSuite(Router) {
       };
     });
     it('provides the data with the specified names, using the store responses returned by the dispatcher', function(done) {
-      router.handleUrl('/', null, function(collectedData) {
+      router.handleUrl('/', null, function(error, collectedData) {
+        expect(error).toBeNull();
         expect(collectedData.a).toBe(dataA);
         expect(collectedData.b).toBe(dataB);
         expect(collectedData.c).toBe(dataC);
@@ -162,7 +166,8 @@ function routerSuite(Router) {
 
     it('sets collected data to undefined if no store response is provided by the dispatcher, but the store key exists', function(done) {
       storeResponsesReturnedByDispatcher.b = undefined;
-      router.handleUrl('/', null, function(collectedData) {
+      router.handleUrl('/', null, function(error, collectedData) {
+        expect(error).toBeNull();
         expect(collectedData.b).toBe(undefined);
         done();
       });
@@ -183,7 +188,7 @@ function routerSuite(Router) {
     });
 
     it('passes user data for a route to the callback of `handleUrl`', function(done) {
-      router.handleUrl('/', null, function(_, dataA, dataB) {
+      router.handleUrl('/', null, function(_, __, dataA, dataB) {
         expect(dataA).toBe(routeDataA);
         expect(dataB).toBe(routeDataB);
         done();

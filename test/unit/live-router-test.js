@@ -27,8 +27,8 @@ describe('LiveRouter:', function() {
         storeResponses.a.publishUpdate(valueA);
         storeResponses.c.publishUpdate(valueC);
 
-        expect(onUpdate).toHaveBeenCalledWithMatch({a: valueA});
-        expect(onUpdate).not.toHaveBeenCalledWithMatch({c: valueC});
+        expect(onUpdate).toHaveBeenCalledWithMatch(null, {a: valueA});
+        expect(onUpdate).not.toHaveBeenCalledWithMatch(null, {c: valueC});
 
         done();
       });
@@ -45,7 +45,8 @@ describe('LiveRouter:', function() {
 
     it('provides an initial data set with the latest published values', function(done) {
       var newValueA = 'new value A';
-      router.handleUrl('/a', null, function(data) {
+      router.handleUrl('/a', null, function(error, data) {
+        expect(error).toBeNull();
         expect(data).toMatch({a: newValueA});
         done();
       });
@@ -72,7 +73,7 @@ describe('LiveRouter:', function() {
       router.handleUrl('/a', null, function() {
         router.handleUrl('/b', null, function() {
           storeResponses.b.publishUpdate('newValueB');
-          expect(onUpdate).toHaveBeenCalledWithMatch({b: 'newValueB'});
+          expect(onUpdate).toHaveBeenCalledWithMatch(null, {b: 'newValueB'});
           done();
         });
       });

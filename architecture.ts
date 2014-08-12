@@ -3,7 +3,7 @@
  * be anything.
  */
 interface DataCallback {
-  (data: any): void;
+  (error: Error, data: any): void;
 }
 
 /**
@@ -103,7 +103,7 @@ interface Dispatcher {
 }
 
 interface RouteHandledCallback {
-  (collectedData: Object, ...userData: any[]): void;
+  (error: Error, collectedData: Object, ...userData: any[]): void;
 }
 
 interface RouteInformation {

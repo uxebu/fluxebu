@@ -26,7 +26,7 @@ describe('store response utilities:', function() {
       });
 
       it('invokes the update callback with new values', function(done) {
-        util.subscribeToAll(storeResponses, noop, function(data) {
+        util.subscribeToAll(storeResponses, noop, function(error, data) {
           expect(data).toMatch({a: newValue});
           done();
         });
@@ -40,7 +40,7 @@ describe('store response utilities:', function() {
       it('invokes the update callback with new values if store responses respond synchronously', function(done) {
         a.resolve();
         b.resolve();
-        util.subscribeToAll(storeResponses, noop, function(data) {
+        util.subscribeToAll(storeResponses, noop, function(error, data) {
           expect(data).toMatch({a: newValue});
           done();
         });
@@ -59,7 +59,8 @@ describe('store response utilities:', function() {
 
       it('calls the `onComplete` callback with updated data if a store response publishes updates before the initial data set is complete', function(done) {
         var newValue = 'new B value';
-        util.subscribeToAll(storeResponses, function(data) {
+        util.subscribeToAll(storeResponses, function(error, data) {
+          expect(error).toBeNull();
           expect(data).toEqual({
             a: 'value A',
             b: newValue,
@@ -84,29 +85,41 @@ describe('store response utilities:', function() {
         }, onUpdate);
       });
 
-      describe('unsubscribe:', function() {
-        var a, b, storeResponses, unsubscribe, onUpdate;
-        beforeEach(function() {
-          a = mockStoreResponse.sync('value A');
-          b = mockStoreResponse.sync('value B');
-          storeResponses = {a: a, b: b, c: null};
-          onUpdate = sinon.spy();
-          unsubscribe = util.subscribeToAll(storeResponses, noop, onUpdate);
-        });
+      it('passes update errors on to the update callback', function(done) {
+        var onUpdate = sinon.spy();
+        util.subscribeToAll(storeResponses, function() {
+          var error = new Error('arbitrary');
+          b.error(error);
+          expect(onUpdate).toHaveBeenCalledWith(error);
+          done();
+        }, onUpdate);
+        a.resolve();
+        b.resolve();
+      });
+    });
 
-        it('returns an object that provides a function per store to unsubscribe', function() {
-          unsubscribe.a();
-          a.publishUpdate('arbitrary');
-          b.publishUpdate('arbitrary');
-          expect(onUpdate).not.toHaveBeenCalledWithMatch({a: 'arbitrary'});
-          expect(onUpdate).toHaveBeenCalledWithMatch({b: 'arbitrary'});
-        });
+    describe('unsubscribe:', function() {
+      var a, b, storeResponses, unsubscribe, onUpdate;
+      beforeEach(function() {
+        a = mockStoreResponse.sync('value A');
+        b = mockStoreResponse.sync('value B');
+        storeResponses = {a: a, b: b, c: null};
+        onUpdate = sinon.spy();
+        unsubscribe = util.subscribeToAll(storeResponses, noop, onUpdate);
+      });
 
-        it('provides unsubscription functions for null / undefined store responses', function() {
-          expect(function() {
-            unsubscribe.c();
-          }).not.toThrow();
-        });
+      it('returns an object that provides a function per store to unsubscribe', function() {
+        unsubscribe.a();
+        a.publishUpdate('arbitrary');
+        b.publishUpdate('arbitrary');
+        expect(onUpdate).not.toHaveBeenCalledWithMatch(null, {a: 'arbitrary'});
+        expect(onUpdate).toHaveBeenCalledWithMatch(null, {b: 'arbitrary'});
+      });
+
+      it('provides unsubscription functions for null / undefined store responses', function() {
+        expect(function() {
+          unsubscribe.c();
+        }).not.toThrow();
       });
     });
   });
@@ -117,13 +130,14 @@ function testBasicQuerying(query) {
   beforeEach(function() {
     storeResponses = {
       a: mockStoreResponse.sync('value A'),
-      b: mockStoreResponse.sync('value B', respondAfter(1)),
+      b: mockStoreResponse.respondsAfter('value B', 1),
       c: mockStoreResponse.async('value C')
     };
   });
 
   it('calls back when all store responses have responded to `query()`', function(done) {
-    query(storeResponses, function(collectedData) {
+    query(storeResponses, function(error, collectedData) {
+      expect(error).toBeNull();
       expect(collectedData).toEqual({
         a: 'value A',
         b: 'value B',
@@ -139,7 +153,8 @@ function testBasicQuerying(query) {
       b: mockStoreResponse.sync('value B'),
       c: mockStoreResponse.sync('value C')
     };
-    query(storeResponses, function(collectedData) {
+    query(storeResponses, function(error, collectedData) {
+      expect(error).toBeNull();
       expect(collectedData).toEqual({
         a: 'value A',
         b: 'value B',
@@ -151,7 +166,8 @@ function testBasicQuerying(query) {
 
   it('can handle `null` values', function(done) {
     storeResponses.d = null;
-    query(storeResponses, function(collectedData) {
+    query(storeResponses, function(error, collectedData) {
+      expect(error).toBeNull();
       expect(collectedData).toEqual({
         a: 'value A',
         b: 'value B',
@@ -163,15 +179,27 @@ function testBasicQuerying(query) {
   });
 
   it('can handle 0 store responses', function(done) {
-    query({}, function(collectedData) {
+    query({}, function(error, collectedData) {
+      expect(error).toBeNull();
       expect(collectedData).toEqual({});
       done();
     });
   });
-}
 
-function respondAfter(time) {
-  return function(fn, value) { setTimeout(function() { fn(value); }, time); };
+  it('invokes the callback immediately when the first error is raised', function(done) {
+    var storeResponses = {
+      a: mockStoreResponse.sync.unresolved('value A'),
+      b: mockStoreResponse.respondsAfter.unresolved('value B', 1),
+      c: mockStoreResponse.async.unresolved('value C')
+    };
+    var cError = new Error('arbitrary');
+    query(storeResponses, function(error) {
+      expect(error).toBe(cError);
+      done();
+    });
+    storeResponses.a.resolve();
+    storeResponses.c.error(cError);
+  });
 }
 
 function noop() {}
