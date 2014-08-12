@@ -1,4 +1,4 @@
-var LiveRouter = require('../../src/live-router');
+var LiveRouter = require('../../lib/live-router');
 var MockDispatcher = require('../mock/dispatcher');
 var mockStoreResponse = require('../mock/store-response');
 

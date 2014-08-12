@@ -1,4 +1,4 @@
-var Router = require('../../src/router');
+var Router = require('../../lib/router');
 var MockDispatcher = require('../mock/dispatcher');
 var mockStoreResponse = require('../mock/store-response');
 

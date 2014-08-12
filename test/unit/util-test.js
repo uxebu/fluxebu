@@ -1,4 +1,4 @@
-var util = require('../../src/util');
+var util = require('../../lib/util');
 var mockStoreResponse = require('../mock/store-response');
 
 describe('store response utilities:', function() {

@@ -1,4 +1,4 @@
-var Dispatcher = require('../../src/dispatcher');
+var Dispatcher = require('../../lib/dispatcher');
 var mockStoreResponse = require('../mock/store-response');
 
 describe('dispatcher', function() {
