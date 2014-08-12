@@ -107,6 +107,9 @@ interface RouteHandledCallback {
 }
 
 interface RouteInformation {
+  /** The user defined id of the route */
+  id: any,
+
   /** Matches from route placeholders */
   params: MapObject<string>;
 
