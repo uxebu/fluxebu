@@ -75,7 +75,9 @@ function callAsync(fn, error, value) {
 }
 
 function respondAfter(time) {
-  return function(fn, error, value) { setTimeout(function() {
-    fn(error, value); }, time);
+  return function(fn, error, value) {
+    setTimeout(function() {
+      fn(error, value);
+    }, time);
   };
 }
