@@ -8,7 +8,7 @@
     "test-watch": "MOCHA_ARGS=\"-w -R min $MOCHA_ARGS\" npm test",
     "coverage": "MOCHA_CMD=\"istanbul cover --hook-into-context ${ISTANBUL_ARGS:- --print detail} _mocha -- \" npm test",
     "test-coveralls": "ISTANBUL_ARGS='--report lcovonly' npm run coverage && coveralls < coverage/lcov.info",
-    "lint": "jshint src test"
+    "lint": "jshint lib test"
   },
   "repository": {
     "type": "git",
