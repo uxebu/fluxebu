@@ -133,7 +133,7 @@ function routerSuite(createRouter) {
     });
   });
 
-  describe('store data collection', function() {
+  describe('store data collection:', function() {
     var storeResponsesReturnedByDispatcher;
     var dataA = 123, dataB = 'bcd', dataC = {foo: 'bar'};
 
@@ -180,6 +180,26 @@ function routerSuite(createRouter) {
       expect(function() {
         router.handleUrl('/', null, noop);
       }).toThrow('TypeError');
+    });
+
+    it('yields the first error raised by any store', function(done) {
+      var b = mockStoreResponse.async.unresolved(dataB);
+      var c = mockStoreResponse.respondsAfter.unresolved(dataC, 1);
+      dispatcher.dispatch = function() {
+        return {
+          a: mockStoreResponse.sync(dataA),
+          b: b,
+          c: c
+        };
+      };
+      var errorB = new Error('arbitrary');
+
+      router.handleUrl('/', null, function(error) {
+        expect(error).toBe(errorB);
+        done();
+      });
+      c.error(new Error('arbitrary'));
+      b.error(errorB);
     });
   });
 
