@@ -3,7 +3,9 @@ var MockDispatcher = require('../mock/dispatcher');
 var mockStoreResponse = require('../mock/store-response');
 
 describe('LiveRouter:', function() {
-  require('./router-test')(LiveRouter);
+  require('./router-test')(function(dispatcher) {
+    return new LiveRouter(dispatcher, function() {});
+  });
 
   describe('live functionality:', function() {
     var dispatcher, router, storeResponses, onUpdate;

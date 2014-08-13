@@ -3,14 +3,16 @@ var MockDispatcher = require('../mock/dispatcher');
 var mockStoreResponse = require('../mock/store-response');
 
 describe('Router:', function() {
-  routerSuite(Router);
+  routerSuite(function(dispatcher) {
+    return new Router(dispatcher);
+  });
 });
 
-function routerSuite(Router) {
+function routerSuite(createRouter) {
   var dispatcher, router;
   beforeEach(function() {
     dispatcher = new MockDispatcher();
-    router = new Router(dispatcher);
+    router = createRouter(dispatcher);
   });
 
   it('cannot handle URLs whan no pattern has been registered', function() {
