@@ -1,6 +1,7 @@
 var LiveRouter = require('../../lib/live-router');
 var MockDispatcher = require('../mock/dispatcher');
 var mockStoreResponse = require('../mock/store-response');
+var same = sinon.match.same;
 
 describe('LiveRouter:', function() {
   require('./suite/router')(function(dispatcher) {
@@ -31,6 +32,22 @@ describe('LiveRouter:', function() {
 
         expect(onUpdate).toHaveBeenCalledWithMatch(null, {a: valueA});
         expect(onUpdate).not.toHaveBeenCalledWithMatch(null, {c: valueC});
+
+        done();
+      });
+      storeResponses.a.resolve();
+      storeResponses.b.resolve();
+    });
+
+    it('calls the `onUpdate()` callback when store responses publish an error', function(done) {
+      router.handleUrl('/a', null, function() {
+        var errorA = new Error('error A');
+        var errorC = new TypeError('error C');
+        storeResponses.a.error(errorA);
+        storeResponses.c.error(errorC);
+
+        expect(onUpdate).toHaveBeenCalledWith(same(errorA));
+        expect(onUpdate).not.toHaveBeenCalledWith(same(errorC));
 
         done();
       });
