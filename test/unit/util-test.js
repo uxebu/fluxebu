@@ -82,12 +82,11 @@ describe('store response utilities:', function() {
       it('can handle store updates from within the `onComplete` callback', function() {
         storeResponses.a.resolve();
         storeResponses.b.resolve();
-        function onUpdate() {}
         util.subscribeToAll(storeResponses, function() {
           expect(function() {
             storeResponses.a.publishUpdate('new value A');
           }).not.toThrow();
-        }, onUpdate);
+        }, noop);
       });
 
       it('passes update errors on to the update callback', function(done) {
