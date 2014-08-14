@@ -1,3 +1,5 @@
+var sinon = require('sinon');
+
 exports.sync = function(value) {
   return mockStoreResponse(value, callSync, true);
 };
