@@ -150,7 +150,7 @@ bootstrap(router, dispatcher, environmentSpecificStores);
 
 function myConnectMiddleware(request, response, next) {
   if (router.canHandleUrl(request.url)) {
-    router.handleUrl(request.url, state, function(data, Component) {
+    router.handleUrl(request.url, state, function(error, data, Component) {
       var htmlString = React.renderComponentToString(Component(data));
       // ... respond here
     });
@@ -172,7 +172,7 @@ bootstrap(router, dispatcher, environmentSpecificStores);
 
 function onUrlChange(url, state) { // onpopstate, link click, form submit
   if (router.canHandleUrl(request.url)) {
-    router.handleUrl(request.url, null, function(data, Component, actions) {
+    router.handleUrl(request.url, null, function(error, data, Component, actions) {
       var props = merge(data, {actions: actions});
       React.renderComponent(Component(props), document.body);
       history.pushState(data, null, url);
