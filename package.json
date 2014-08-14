@@ -4,7 +4,7 @@
   "description": "An approach to flux that works for server-side (stateless) and client-side (stateful) component rendering.",
   "main": "lib",
   "scripts": {
-    "test": "${MOCHA_CMD:-mocha} -R dot -r setup-referee-sinon/globals $MOCHA_ARGS test/unit",
+    "test": "${MOCHA_CMD:-mocha} -R dot -r setup-referee-sinon/globals $MOCHA_ARGS ${MOCHA_FILES:-test/unit}",
     "test-watch": "MOCHA_ARGS=\"-w -R min $MOCHA_ARGS\" npm test",
     "coverage": "MOCHA_CMD=\"istanbul cover --hook-into-context ${ISTANBUL_ARGS:- --print detail} _mocha -- \" npm test",
     "test-coveralls": "ISTANBUL_ARGS='--report lcovonly' npm run coverage && coveralls < coverage/lcov.info",
