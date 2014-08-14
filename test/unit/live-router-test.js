@@ -1,9 +1,13 @@
 var LiveRouter = require('../../lib/live-router');
 var MockDispatcher = require('../mock/dispatcher');
 var mockStoreResponse = require('../mock/store-response');
+var same = sinon.match.same;
+var any = sinon.match.any;
 
 describe('LiveRouter:', function() {
-  require('./router-test')(LiveRouter);
+  require('./suite/router')(function(dispatcher) {
+    return new LiveRouter(dispatcher, function() {});
+  });
 
   describe('live functionality:', function() {
     var dispatcher, router, storeResponses, onUpdate;
@@ -27,8 +31,24 @@ describe('LiveRouter:', function() {
         storeResponses.a.publishUpdate(valueA);
         storeResponses.c.publishUpdate(valueC);
 
-        expect(onUpdate).toHaveBeenCalledWithMatch({a: valueA});
-        expect(onUpdate).not.toHaveBeenCalledWithMatch({c: valueC});
+        expect(onUpdate).toHaveBeenCalledWithMatch('a', null, valueA);
+        expect(onUpdate).not.toHaveBeenCalledWithMatch('c', any, valueC);
+
+        done();
+      });
+      storeResponses.a.resolve();
+      storeResponses.b.resolve();
+    });
+
+    it('calls the `onUpdate()` callback when store responses publish an error', function(done) {
+      router.handleUrl('/a', null, function() {
+        var errorA = new Error('error A');
+        var errorC = new TypeError('error C');
+        storeResponses.a.error(errorA);
+        storeResponses.c.error(errorC);
+
+        expect(onUpdate).toHaveBeenCalledWith('a', same(errorA));
+        expect(onUpdate).not.toHaveBeenCalledWith('c', same(errorC));
 
         done();
       });
@@ -45,7 +65,8 @@ describe('LiveRouter:', function() {
 
     it('provides an initial data set with the latest published values', function(done) {
       var newValueA = 'new value A';
-      router.handleUrl('/a', null, function(data) {
+      router.handleUrl('/a', null, function(error, data) {
+        expect(error).toBeNull();
         expect(data).toMatch({a: newValueA});
         done();
       });
@@ -59,7 +80,7 @@ describe('LiveRouter:', function() {
       router.handleUrl('/a', null, function() {
         router.handleUrl('/b', null, function() {
           storeResponses.a.publishUpdate('newValueA');
-          expect(onUpdate).not.toHaveBeenCalledWithMatch({a: 'newValueA'});
+          expect(onUpdate).not.toHaveBeenCalledWithMatch('a', any, 'newValueA');
           done();
         });
       });
@@ -72,7 +93,7 @@ describe('LiveRouter:', function() {
       router.handleUrl('/a', null, function() {
         router.handleUrl('/b', null, function() {
           storeResponses.b.publishUpdate('newValueB');
-          expect(onUpdate).toHaveBeenCalledWithMatch({b: 'newValueB'});
+          expect(onUpdate).toHaveBeenCalledWithMatch('b', null, 'newValueB');
           done();
         });
       });

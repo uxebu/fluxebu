@@ -1,7 +1,7 @@
 var Dispatcher = require('../../lib/dispatcher');
 var mockStoreResponse = require('../mock/store-response');
 
-describe('dispatcher', function() {
+describe('dispatcher:', function() {
   var dispatcher, storeA, storeB, storeC;
   beforeEach(function() {
     storeA = mockStore();
@@ -71,11 +71,11 @@ describe('dispatcher', function() {
 
     function queryAandB(storeResponses, callback) {
       var values = {};
-      storeResponses.a.query(function(value) {
+      storeResponses.a.query(function(error, value) {
         values.a = value;
         if (values.b) { callback(values); }
       });
-      storeResponses.b.query(function(value) {
+      storeResponses.b.query(function(error, value) {
         values.b = value;
         if (values.a) { callback(values); }
       });
