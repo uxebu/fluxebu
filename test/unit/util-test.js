@@ -1,5 +1,6 @@
 var util = require('../../lib/util');
 var mockStoreResponse = require('../mock/store-response');
+var any = sinon.match.any;
 
 describe('store response utilities:', function() {
   describe('queryAll:', function() {
@@ -26,8 +27,10 @@ describe('store response utilities:', function() {
       });
 
       it('invokes the update callback with new values', function(done) {
-        util.subscribeToAll(storeResponses, noop, function(error, data) {
-          expect(data).toMatch({a: newValue});
+        util.subscribeToAll(storeResponses, noop, function(name, error, data) {
+          expect(name).toBe('a');
+          expect(error).toBe(null);
+          expect(data).toBe(newValue);
           done();
         });
         a.resolve();
@@ -40,8 +43,10 @@ describe('store response utilities:', function() {
       it('invokes the update callback with new values if store responses respond synchronously', function(done) {
         a.resolve();
         b.resolve();
-        util.subscribeToAll(storeResponses, noop, function(error, data) {
-          expect(data).toMatch({a: newValue});
+        util.subscribeToAll(storeResponses, noop, function(name, error, data) {
+          expect(name).toBe('a');
+          expect(error).toBe(null);
+          expect(data).toBe(newValue);
           done();
         });
 
@@ -90,7 +95,7 @@ describe('store response utilities:', function() {
         util.subscribeToAll(storeResponses, function() {
           var error = new Error('arbitrary');
           b.error(error);
-          expect(onUpdate).toHaveBeenCalledWith(error);
+          expect(onUpdate).toHaveBeenCalledWith('b', error);
           done();
         }, onUpdate);
         a.resolve();
@@ -112,8 +117,8 @@ describe('store response utilities:', function() {
         unsubscribe.a();
         a.publishUpdate('arbitrary');
         b.publishUpdate('arbitrary');
-        expect(onUpdate).not.toHaveBeenCalledWithMatch(null, {a: 'arbitrary'});
-        expect(onUpdate).toHaveBeenCalledWithMatch(null, {b: 'arbitrary'});
+        expect(onUpdate).not.toHaveBeenCalledWithMatch('a', null, 'arbitrary');
+        expect(onUpdate).toHaveBeenCalledWithMatch('b', any, 'arbitrary');
       });
 
       it('provides unsubscription functions for null / undefined store responses', function() {

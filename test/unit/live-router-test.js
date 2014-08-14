@@ -2,6 +2,7 @@ var LiveRouter = require('../../lib/live-router');
 var MockDispatcher = require('../mock/dispatcher');
 var mockStoreResponse = require('../mock/store-response');
 var same = sinon.match.same;
+var any = sinon.match.any;
 
 describe('LiveRouter:', function() {
   require('./suite/router')(function(dispatcher) {
@@ -30,8 +31,8 @@ describe('LiveRouter:', function() {
         storeResponses.a.publishUpdate(valueA);
         storeResponses.c.publishUpdate(valueC);
 
-        expect(onUpdate).toHaveBeenCalledWithMatch(null, {a: valueA});
-        expect(onUpdate).not.toHaveBeenCalledWithMatch(null, {c: valueC});
+        expect(onUpdate).toHaveBeenCalledWithMatch('a', null, valueA);
+        expect(onUpdate).not.toHaveBeenCalledWithMatch('c', any, valueC);
 
         done();
       });
@@ -46,8 +47,8 @@ describe('LiveRouter:', function() {
         storeResponses.a.error(errorA);
         storeResponses.c.error(errorC);
 
-        expect(onUpdate).toHaveBeenCalledWith(same(errorA));
-        expect(onUpdate).not.toHaveBeenCalledWith(same(errorC));
+        expect(onUpdate).toHaveBeenCalledWith('a', same(errorA));
+        expect(onUpdate).not.toHaveBeenCalledWith('c', same(errorC));
 
         done();
       });
@@ -79,7 +80,7 @@ describe('LiveRouter:', function() {
       router.handleUrl('/a', null, function() {
         router.handleUrl('/b', null, function() {
           storeResponses.a.publishUpdate('newValueA');
-          expect(onUpdate).not.toHaveBeenCalledWithMatch({a: 'newValueA'});
+          expect(onUpdate).not.toHaveBeenCalledWithMatch('a', any, 'newValueA');
           done();
         });
       });
@@ -92,7 +93,7 @@ describe('LiveRouter:', function() {
       router.handleUrl('/a', null, function() {
         router.handleUrl('/b', null, function() {
           storeResponses.b.publishUpdate('newValueB');
-          expect(onUpdate).toHaveBeenCalledWithMatch(null, {b: 'newValueB'});
+          expect(onUpdate).toHaveBeenCalledWithMatch('b', null, 'newValueB');
           done();
         });
       });
