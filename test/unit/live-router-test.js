@@ -3,7 +3,7 @@ var MockDispatcher = require('../mock/dispatcher');
 var mockStoreResponse = require('../mock/store-response');
 
 describe('LiveRouter:', function() {
-  require('./router-test')(function(dispatcher) {
+  require('./suite/router')(function(dispatcher) {
     return new LiveRouter(dispatcher, function() {});
   });
 
