@@ -33,6 +33,7 @@ describe('store-response/lazy:', function() {
   });
 
   it('does not invoke the callback without being queried or subscribed to', function() {
+    /* jshint nonew: false */
     new LazyStoreResponse(onQuery);
     expect(onQuery).not.toHaveBeenCalled();
   });
