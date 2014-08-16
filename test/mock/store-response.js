@@ -1,4 +1,5 @@
 var sinon = require('sinon');
+var SubscriptionList = require('../../lib/subscription-list');
 
 exports.sync = function(value) {
   return mockStoreResponse(value, callSync, true);
@@ -25,36 +26,35 @@ exports.respondsAfter.unresolved = function(value, timeout) {
 };
 
 function mockStoreResponse(value, call, isResolved) {
-  var subscriptions = [];
-  var pendingQueries = !isResolved && [];
+  var subscriptions = new SubscriptionList();
+  var pendingQueries = !isResolved && new SubscriptionList();
   var initialError = null;
 
   return {
     query: sinon.spy(function(callback) {
-      if (isResolved) { call(callback, initialError, value); }
-      else { pendingQueries.push(callback); }
+      if (isResolved) { callback(initialError, value); }
+      else { pendingQueries.add(callback); }
     }),
     subscribe: sinon.spy(function(callback) {
-      subscriptions.push(callback);
-      if (isResolved) { call(callback, initialError, value); }
+      subscriptions.add(callback);
+      if (isResolved) { callback(initialError, value); }
     }),
     unsubscribe: sinon.spy(function(callback) {
-      var index = subscriptions.indexOf(callback);
-      if (index !== -1) { subscriptions.splice(index, 1); }
+      subscriptions.remove(callback);
     }),
 
     error: function(error) {
       if (!isResolved) {
         isResolved = true;
         initialError = error;
-        pendingQueries.forEach(function(callback) { call(callback, error); });
+        call(function() { pendingQueries.dispatch(error); });
       }
-      subscriptions.forEach(function(listener) { call(listener, error); });
+      call(function() { subscriptions.dispatch(error); });
     },
     publishUpdate: function(data) {
       value = data;
       if (isResolved) {
-        subscriptions.forEach(function(listener) { call(listener, null, data); });
+        call(function() { subscriptions.dispatch(null, data); });
       } else {
         this.resolve();
       }
@@ -62,24 +62,22 @@ function mockStoreResponse(value, call, isResolved) {
     resolve: function() {
       if (isResolved) { return; }
       isResolved = true;
-      pendingQueries.forEach(this.query, this);
+      pendingQueries.dispatch(null, value);
       this.publishUpdate(value);
     }
   };
 }
 
-function callSync(fn, error, value) {
-  fn(error, value);
+function callSync(fn) {
+  fn();
 }
 
-function callAsync(fn, error, value) {
-  process.nextTick(function() { fn(error, value); });
+function callAsync(fn) {
+  process.nextTick(fn);
 }
 
 function respondAfter(time) {
-  return function(fn, error, value) {
-    setTimeout(function() {
-      fn(error, value);
-    }, time);
+  return function(fn) {
+    setTimeout(fn, time);
   };
 }
