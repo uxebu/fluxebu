@@ -135,6 +135,14 @@ describe('Subscription list:', function() {
       expect(listener).toHaveBeenCalled();
     });
   });
+
+  it('allows listeners to be added for a single invocation', function() {
+    var listener = spy();
+    list.once(listener);
+    list.dispatch('arbitrary');
+    list.dispatch('arbitrary');
+    expect(listener).toHaveBeenCalledOnce();
+  });
 });
 
 function noop() {
