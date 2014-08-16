@@ -1,4 +1,5 @@
 {
+  "es3": false,
   "extends": "../.jshintrc",
   "globals": {
     "describe": true,
