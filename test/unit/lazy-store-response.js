@@ -97,6 +97,15 @@ describe('store-response/lazy:', function() {
 
       expect(callback).not.toHaveBeenCalledWith(updatedError, updatedValue);
     });
+
+    it('notifies additional subscribers about any update', function() {
+      var subscriber = spy(), newValue = {arbitrary: null};
+      response.subscribe(function() {});
+      response.subscribe(subscriber);
+
+      onQuery.yield(null, newValue);
+      expect(subscriber).toHaveBeenCalledWith(null, same(newValue));
+    });
   });
 
   it('allows subscription callbacks to be unsubscribed', function() {
