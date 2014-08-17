@@ -44,8 +44,8 @@ describe('LiveRouter:', function() {
       router.handleUrl('/a', null, function() {
         var errorA = new Error('error A');
         var errorC = new TypeError('error C');
-        storeResponses.a.error(errorA);
-        storeResponses.c.error(errorC);
+        storeResponses.a.publishError(errorA);
+        storeResponses.c.publishError(errorC);
 
         expect(onUpdate).toHaveBeenCalledWith('a', same(errorA));
         expect(onUpdate).not.toHaveBeenCalledWith('c', same(errorC));

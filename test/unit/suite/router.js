@@ -193,8 +193,8 @@ function routerSuite(createRouter) {
         expect(error).toBe(errorB);
         done();
       });
-      c.error(new Error('arbitrary'));
-      b.error(errorB);
+      c.publishError(new Error('arbitrary'));
+      b.publishError(errorB);
     });
   });
 

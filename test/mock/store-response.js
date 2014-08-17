@@ -1,5 +1,5 @@
 var sinon = require('sinon');
-var SubscriptionList = require('../../lib/subscription-list');
+var LazyStoreResponse = require('../../lib/store-response/lazy');
 
 exports.sync = function(value) {
   return mockStoreResponse(value, callSync, true);
@@ -26,58 +26,45 @@ exports.respondsAfter.unresolved = function(value, timeout) {
 };
 
 function mockStoreResponse(value, call, isResolved) {
-  var subscriptions = new SubscriptionList();
-  var pendingQueries = !isResolved && new SubscriptionList();
-  var initialError = null;
-
-  return {
-    query: sinon.spy(function(callback) {
-      if (isResolved) { callback(initialError, value); }
-      else { pendingQueries.add(callback); }
-    }),
-    subscribe: sinon.spy(function(callback) {
-      subscriptions.add(callback);
-      if (isResolved) { callback(initialError, value); }
-    }),
-    unsubscribe: sinon.spy(function(callback) {
-      subscriptions.remove(callback);
-    }),
-
-    error: function(error) {
-      if (!isResolved) {
-        isResolved = true;
-        initialError = error;
-        call(function() { pendingQueries.dispatch(error); });
-      }
-      call(function() { subscriptions.dispatch(error); });
-    },
-    publishUpdate: function(data) {
-      value = data;
-      if (isResolved) {
-        call(function() { subscriptions.dispatch(null, data); });
-      } else {
-        this.resolve();
-      }
-    },
-    resolve: function() {
-      if (isResolved) { return; }
-      isResolved = true;
-      pendingQueries.dispatch(null, value);
-      this.publishUpdate(value);
+  var resolve, initialError = null;
+  var storeResponse = new LazyStoreResponse(function(callback) {
+    resolve = function(error, value) {
+      call(callback, error, value);
+    };
+    if (isResolved) {
+      resolve(null, value);
     }
+  });
+  sinon.spy(storeResponse, 'query');
+  sinon.spy(storeResponse, 'subscribe');
+  sinon.spy(storeResponse, 'unsubscribe');
+
+  storeResponse.publishError = function(error) {
+    initialError = null;
+    if (resolve) { resolve(error); }
   };
+  storeResponse.publishUpdate = function(data) {
+    value = data;
+    if (resolve) { resolve(null, data); }
+  };
+  storeResponse.resolve = function() {
+    isResolved = true;
+    if (resolve) { resolve(null, value); }
+  };
+
+  return storeResponse;
 }
 
-function callSync(fn) {
-  fn();
+function callSync(fn, error, value) {
+  fn(error, value);
 }
 
-function callAsync(fn) {
-  process.nextTick(fn);
+function callAsync(fn, error, value) {
+  process.nextTick(function() { fn(error, value); });
 }
 
 function respondAfter(time) {
-  return function(fn) {
-    setTimeout(fn, time);
+  return function(fn, error, value) {
+    setTimeout(function() { fn(error, value); }, time);
   };
 }

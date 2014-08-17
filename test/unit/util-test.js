@@ -93,7 +93,7 @@ describe('store response utilities:', function() {
         var onUpdate = sinon.spy();
         util.subscribeToAll(storeResponses, function() {
           var error = new Error('arbitrary');
-          b.error(error);
+          b.publishError(error);
           expect(onUpdate).toHaveBeenCalledWith('b', error);
           done();
         }, onUpdate);
@@ -202,7 +202,7 @@ function testBasicQuerying(query) {
       done();
     });
     storeResponses.a.resolve();
-    storeResponses.c.error(cError);
+    storeResponses.c.publishError(cError);
   });
 }
 
