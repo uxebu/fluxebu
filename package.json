@@ -36,6 +36,7 @@
     "coveralls": "~2.11.1"
   },
   "dependencies": {
+    "macrotask": "^2.7.1",
     "routes": "^1.2.0"
   }
 }

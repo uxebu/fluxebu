@@ -1,4 +1,5 @@
 var LazyStoreResponse = require('../../lib/store-response/lazy');
+var defer = require('../../lib/defer');
 
 var same = sinon.match.same, spy = sinon.spy, stub = sinon.stub;
 
@@ -125,29 +126,29 @@ describe('store-response/lazy:', function() {
 
     it('invokes a destruction function returned by the initialization callback when the last query callback is removed asynchronously', function(done) {
       queryAndThenUnsubscribe(response, function() {});
-      setTimeout(function() {
+      defer(function() {
         expect(destroy).toHaveBeenCalled();
         done();
-      }, 1);
+      });
     });
 
     it('invokes a destruction function returned by the initialization callback when the last subscriber callback is removed asynchronously', function(done) {
       var subscriber = function() {};
       response.subscribe(subscriber);
       response.unsubscribe(subscriber);
-      setTimeout(function() {
+      defer(function() {
         expect(destroy).toHaveBeenCalled();
         done();
-      }, 1);
+      });
     });
 
     it('does not invoke the destruction callback on arbitrary unsubscribtions', function(done) {
       response.subscribe(function() {});
       response.unsubscribe(function() {});
-      setTimeout(function() {
+      defer(function() {
         expect(destroy).not.toHaveBeenCalled();
         done();
-      }, 1);
+      });
     });
     
     it('invokes the destruction callback asynchronously', function() {
@@ -158,48 +159,48 @@ describe('store-response/lazy:', function() {
     it('does not invoke the destruction callback more than once', function(done) {
       queryAndThenUnsubscribe(response, function() {});
       queryAndThenUnsubscribe(response, function() {});
-      setTimeout(function() {
+      defer(function() {
         expect(destroy).toHaveBeenCalledOnce();
         done();
-      }, 1);
+      });
     });
     
     it('does not invoke the destruction callback if another subscriber is added in the meantime', function(done) {
       queryAndThenUnsubscribe(response, function() {});
       response.subscribe(function() {});
-      setTimeout(function() {
+      defer(function() {
         expect(destroy).not.toHaveBeenCalled();
         done();
-      }, 1);
+      });
     });
 
     it('does not invoke the destruction callback if another query callback is added in the meantime and the response is still awaiting a value', function(done) {
       queryAndThenUnsubscribe(response, function() {});
       response.query(function() {});
-      setTimeout(function() {
+      defer(function() {
         expect(destroy).not.toHaveBeenCalled();
         done();
-      }, 1);
+      });
     });
 
     it('invokes the destruction callback if another query callback is added in the meantime but the response has received a value', function(done) {
       queryAndThenUnsubscribe(response, function() {});
       initCallback.yield(null, 'arbitrary');
       response.query(function() {});
-      setTimeout(function() {
+      defer(function() {
         expect(destroy).toHaveBeenCalled();
         done();
-      }, 1);
+      });
     });
 
     it('invokes the destruction callback if another query callback is added in the meantime but the response has received an error', function(done) {
       queryAndThenUnsubscribe(response, function() {});
       initCallback.yield(new Error('arbitrary'));
       response.query(function() {});
-      setTimeout(function() {
+      defer(function() {
         expect(destroy).toHaveBeenCalled();
         done();
-      }, 1);
+      });
     });
     
     it('invokes the destruction callback if only queries were registered and no listeners are remaining', function(done) {
@@ -208,10 +209,10 @@ describe('store-response/lazy:', function() {
       response.query(function() {});
       response.query(function() {});
       initCallback.yield(null, null);
-      setTimeout(function() {
+      defer(function() {
         expect(destroy).toHaveBeenCalled();
         done();
-      }, 1);
+      });
     });
   });
 });
