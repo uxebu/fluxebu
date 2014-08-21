@@ -1,4 +1,4 @@
-var FutureStoreResponse = require('../../lib/future-store-response');
+var FutureStoreResponse = require('../../lib/store-response/future');
 var mockStoreResponse = require('../mock/store-response');
 
 describe('FutureStoreResponse:', function() {
