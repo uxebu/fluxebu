@@ -56,7 +56,7 @@ describe('Subscription list:', function() {
 
     expect(listener).not.toHaveBeenCalled();
   });
-
+  
   it('does not affect other registered listeners if a listener is removed', function() {
     var a = spy(), b = noop(), c = spy();
     addAll(a, b, c);
@@ -142,6 +142,18 @@ describe('Subscription list:', function() {
     list.dispatch('arbitrary');
     list.dispatch('arbitrary');
     expect(listener).toHaveBeenCalledOnce();
+  });
+  
+  it('exposes the number of listeners added to the list if there is one listener', function() {
+
+    list.add(function() {});
+    expect(list.getLength()).toBe(1);
+  });
+
+  it('exposes the number of listeners added if there are two listeners', function() {
+    list.add(function() {});
+    list.add(function() {});
+    expect(list.getLength()).toBe(2);
   });
 });
 
