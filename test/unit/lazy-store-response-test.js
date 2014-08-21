@@ -3,39 +3,39 @@ var LazyStoreResponse = require('../../lib/store-response/lazy');
 var same = sinon.match.same, spy = sinon.spy, stub = sinon.stub;
 
 describe('store-response/lazy:', function() {
-  var response, onQuery;
+  var response, initCallback;
   beforeEach(function() {
-    onQuery = stub();
-    response = new LazyStoreResponse(onQuery);
+    initCallback = stub();
+    response = new LazyStoreResponse(initCallback);
   });
 
   it('invokes the callback as soon as the response is queried', function() {
     response.query(noop);
-    expect(onQuery).toHaveBeenCalled();
+    expect(initCallback).toHaveBeenCalled();
   });
 
   it('invokes the callback as soon as the response is subscribed to', function() {
     response.subscribe(noop);
-    expect(onQuery).toHaveBeenCalled();
+    expect(initCallback).toHaveBeenCalled();
   });
 
   it('invokes the callback only for the first query', function() {
     response.query(noop);
     response.query(noop);
-    expect(onQuery).toHaveBeenCalledOnce();
+    expect(initCallback).toHaveBeenCalledOnce();
   });
 
   it('invokes the callback only for the first subscription or query', function() {
     response.subscribe(noop);
     response.subscribe(noop);
     response.query(noop);
-    expect(onQuery).toHaveBeenCalledOnce();
+    expect(initCallback).toHaveBeenCalledOnce();
   });
 
   it('does not invoke the callback without being queried or subscribed to', function() {
     /* jshint nonew: false */
-    new LazyStoreResponse(onQuery);
-    expect(onQuery).not.toHaveBeenCalled();
+    new LazyStoreResponse(initCallback);
+    expect(initCallback).not.toHaveBeenCalled();
   });
 
   describe('error/value resolution:', function() {
@@ -43,7 +43,7 @@ describe('store-response/lazy:', function() {
     beforeEach(function() {
       error = new Error('arbitrary');
       value = {};
-      onQuery.yields(error, value);
+      initCallback.yields(error, value);
     });
 
     it('it notifies all query callbacks about errors and values passed to the passed-in callback', function() {
@@ -65,7 +65,7 @@ describe('store-response/lazy:', function() {
     });
 
     it('notifies query callbacks and subscribers if errors and values are provided asynchronously', function(done) {
-      onQuery.yieldsAsync(error, value);
+      initCallback.yieldsAsync(error, value);
 
       var a = spy(), b = spy(), c = spy();
       response.query(a);
@@ -84,7 +84,7 @@ describe('store-response/lazy:', function() {
       var updatedError = null, updatedValue = {arbitrary: 1};
       var subscriber = spy();
       response.subscribe(subscriber);
-      onQuery.yield(updatedError, updatedValue);
+      initCallback.yield(updatedError, updatedValue);
 
       expect(subscriber).toHaveBeenCalledWith(updatedError, updatedValue);
     });
@@ -93,7 +93,7 @@ describe('store-response/lazy:', function() {
       var updatedError = null, updatedValue = {arbitrary: 1};
       var callback = spy();
       response.query(callback);
-      onQuery.yield(updatedError, updatedValue);
+      initCallback.yield(updatedError, updatedValue);
 
       expect(callback).not.toHaveBeenCalledWith(updatedError, updatedValue);
     });
@@ -103,7 +103,7 @@ describe('store-response/lazy:', function() {
       response.subscribe(function() {});
       response.subscribe(subscriber);
 
-      onQuery.yield(null, newValue);
+      initCallback.yield(null, newValue);
       expect(subscriber).toHaveBeenCalledWith(null, same(newValue));
     });
   });
@@ -112,8 +112,43 @@ describe('store-response/lazy:', function() {
     var subscriber = spy();
     response.subscribe(subscriber);
     response.unsubscribe(subscriber);
-    onQuery.yield(new Error('arbitrary'));
+    initCallback.yield(new Error('arbitrary'));
     expect(subscriber).not.toHaveBeenCalled();
+  });
+
+  describe('destruction callbacks:', function() {
+    var destroy;
+    beforeEach(function() {
+      destroy = spy();
+      initCallback.returns(destroy);
+    });
+
+    it('invokes a destruction function returned by the initialization callback when the last query callback is removed asynchronously', function(done) {
+      var queryCallback = function() {};
+      response.query(queryCallback);
+      response.unsubscribe(queryCallback);
+      setTimeout(function() {
+        expect(destroy).toHaveBeenCalled();
+        done();
+      }, 1);
+    });
+
+    it('invokes a destruction function returned by the initialization callback when the last subscriber callback is removed asynchronously', function(done) {
+      var subscriber = function() {};
+      response.subscribe(subscriber);
+      response.unsubscribe(subscriber);
+      setTimeout(function() {
+        expect(destroy).toHaveBeenCalled();
+        done();
+      }, 1);
+    });
+    
+    it('invokes the destruction callback asynchronously', function() {
+      var queryCallback = function() {};
+      response.query(queryCallback);
+      response.unsubscribe(queryCallback);
+      expect(destroy).not.toHaveBeenCalled();
+    });
   });
 });
 
