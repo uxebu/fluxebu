@@ -18,9 +18,7 @@ Dispatcher.prototype.dispatch = function(action, data) {
   for (var i = 0, n = callbacks.length; i < n; i++) {
     var spec = callbacks[i];
     var callback = spec[0];
-    var invoke = spec[1];
-    var keypaths = spec[2];
-    invoke(callback, action, data, get, keypaths);
+    callback(action);
   }
 
 };
