@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
-    "test": "mocha --reporter dot '*/*-test.js'"
+    "test": "mocha --reporter dot '*/*-test.js' -t 20"
   },
   "repository": {
     "type": "git",
@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/uxebu/fluxebu#readme",
   "devDependencies": {
+    "es6-promise": "^2.3.0",
     "eslint": "^0.23.0",
     "mocha": "^2.2.5",
     "sinon": "^1.15.3"
