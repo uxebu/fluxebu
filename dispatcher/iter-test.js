@@ -8,7 +8,7 @@ var assert = sinon.assert;
 var same = sinon.match.same;
 var spy = sinon.spy;
 
-var Promise = global.Promise || require('es6-promise').Promise;
+var Promise = global.Promise || require('pinkie-promise');
 
 var iter = require('./iter');
 
