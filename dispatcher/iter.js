@@ -1,5 +1,7 @@
 'use strict';
 
+var immediate = require('immediate');
+
 var isArray = Array.isArray;
 function isPromise(value) {
   return typeof value.then === 'function';
@@ -22,12 +24,12 @@ function iterate(next, callback) {
 
 function continueAfter(promise, next, callback) {
   function continueIteration() {
-    iterate(next, callback);
+    immediate(iterate, next, callback);
   }
 
   promise.then(
     function resolved(value) {
-      callback(value, false);
+      immediate(callback, value, false);
       continueIteration();
     },
     continueIteration
@@ -50,8 +52,8 @@ function iterIterator(iterator) {
 module.exports = function iter(value, callback) {
   if (isPromise(value)) {
     value.then(
-      function resolved(result) { iter(result, callback); },
-      function rejected() { callback(undefined, true); }
+      function resolved(result) { immediate(iter, result, callback); },
+      function rejected() { immediate(callback, undefined, true); }
     );
   } else if (isArray(value)) {
     iterate(iterArray(value), callback);

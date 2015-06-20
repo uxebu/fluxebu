@@ -29,5 +29,8 @@
     "eslint": "^0.23.0",
     "mocha": "^2.2.5",
     "sinon": "^1.15.3"
+  },
+  "dependencies": {
+    "immediate": "^3.2.1"
   }
 }

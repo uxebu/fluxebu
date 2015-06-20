@@ -38,11 +38,9 @@ describe('iteration:', function() {
   it('calls the callback with the eventual value if passed a promise', function(done) {
     var callback = spy(function(result, iterationDone) {
       if (!iterationDone) return;
-      process.nextTick(function() { // get out of promise error handling
-        assert.calledWith(callback, same(value));
-        assert.calledWith(callback.lastCall, undefined, true);
-        done();
-      });
+      assert.calledWith(callback, same(value));
+      assert.calledWith(callback.lastCall, undefined, true);
+      done();
     });
 
     iter(Promise.resolve(value), callback);
@@ -51,10 +49,8 @@ describe('iteration:', function() {
   it('only calls the callback to signal the end of iteration for a rejected promise', function(done) {
     var callback = spy(function(_, iterationDone) {
       if (!iterationDone) return;
-      process.nextTick(function() {
-        assert.calledOnce(callback);
-        done();
-      });
+      assert.callCount(callback, 1);
+      done();
     });
 
     iter(Promise.reject(), callback);
@@ -74,12 +70,10 @@ describe('iteration:', function() {
   it('calls the callback for each value in an array, waiting for promises to resolve', function(done) {
     var callback = spy(function(result, iterationDone) {
       if (!iterationDone) return;
-      process.nextTick(function() { // get out of promise error handling
-        assert.calledWith(callback.firstCall, same(value), false);
-        assert.calledWith(callback.secondCall, 'b', false);
-        assert.calledWith(callback.thirdCall, 'c', false);
-        done();
-      });
+      assert.calledWith(callback.firstCall, same(value), false);
+      assert.calledWith(callback.secondCall, 'b', false);
+      assert.calledWith(callback.thirdCall, 'c', false);
+      done();
     });
 
     iter([Promise.resolve(value), Promise.resolve('b'), 'c'], callback);
@@ -88,10 +82,8 @@ describe('iteration:', function() {
   it('does not call the callback for rejected promises, and continues iteration', function(done) {
     var callback = spy(function(result, iterationDone) {
       if (!iterationDone) return;
-      process.nextTick(function() { // get out of promise error handling
-        assert.calledWith(callback.firstCall, same(value), false);
-        done();
-      });
+      assert.calledWith(callback.firstCall, same(value), false);
+      done();
     });
     iter([Promise.reject(Error('arbitrary')), value], callback);
   });
@@ -110,12 +102,10 @@ describe('iteration:', function() {
   it('calls the callback for each value produced by an iterator, waiting for promises to resolve', function(done) {
     var callback = spy(function(result, iterationDone) {
       if (!iterationDone) return;
-      process.nextTick(function() { // get out of promise error handling
-        assert.calledWith(callback.firstCall, same(value), false);
-        assert.calledWith(callback.secondCall, 'b', false);
-        assert.calledWith(callback.thirdCall, 'c', false);
-        done();
-      });
+      assert.calledWith(callback.firstCall, same(value), false);
+      assert.calledWith(callback.secondCall, 'b', false);
+      assert.calledWith(callback.thirdCall, 'c', false);
+      done();
     });
 
     iter(Iterator(Promise.resolve(value), Promise.resolve('b'), 'c'), callback);
@@ -124,10 +114,8 @@ describe('iteration:', function() {
   it('does not call the callback for rejected promises, and continues iteration', function(done) {
     var callback = spy(function(result, iterationDone) {
       if (!iterationDone) return;
-      process.nextTick(function() { // get out of promise error handling
-        assert.calledWith(callback.firstCall, same(value), false);
-        done();
-      });
+      assert.calledWith(callback.firstCall, same(value), false);
+      done();
     });
     iter(Iterator(Promise.reject(Error('arbitrary')), value), callback);
   });
