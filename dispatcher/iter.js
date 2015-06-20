@@ -14,12 +14,10 @@ var TERMINATED = {};
 function iterate(next, callback) {
   do {
     var value = next();
-    if (isPromise(value)) {
-      return continueAfter(value, next, callback);
-    }
+    if (value === TERMINATED) return callback(undefined, true);
+    if (isPromise(value)) return continueAfter(value, next, callback);
     callback(value, false);
   } while (value !== TERMINATED);
-  callback(undefined, true);
 }
 
 function continueAfter(promise, next, callback) {

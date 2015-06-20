@@ -65,6 +65,7 @@ describe('iteration:', function() {
     assert.calledWith(callback.secondCall, 'b', false);
     assert.calledWith(callback.thirdCall, 'c', false);
     assert.calledWith(callback.lastCall, undefined, true);
+    assert.callCount(callback, 4);
   });
 
   it('calls the callback for each value in an array, waiting for promises to resolve', function(done) {
