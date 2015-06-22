@@ -1,6 +1,7 @@
 'use strict';
 
 var defaults = require('./defaults');
+var iter = require('./iter');
 
 var slice = [].slice;
 
@@ -11,14 +12,21 @@ function Dispatcher(get, set, equals) {
   this.callbacks = [];
 }
 
-Dispatcher.prototype.dispatch = function(action, data) {
+Dispatcher.prototype.dispatch = function(action, data, callback) {
   var callbacks = this.callbacks;
   var get = this.get;
 
+  function runTransformations(factory, invoke, keypaths) {
+    var transformations = factory(action);
+    if (!transformations) return;
+    iter(transformations, function(transformation, isDone) {
+      if (isDone) return;
+      invoke(transformation, action, data, get, keypaths);
+    });
+  }
+
   for (var i = 0, n = callbacks.length; i < n; i++) {
-    var spec = callbacks[i];
-    var callback = spec[0];
-    callback(action);
+    runTransformations.apply(null, callbacks[i]);
   }
 
 };
