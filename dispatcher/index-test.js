@@ -10,6 +10,7 @@ sinon.assert.expose(assert, {prefix: ''});
 var any = sinon.match.any;
 var same = sinon.match.same;
 var spy = sinon.spy;
+var stub = sinon.stub;
 
 var Promise = global.Promise || require('pinkie-promise');
 
@@ -18,82 +19,132 @@ var Dispatcher = require('./index');
 describe('dispatcher:', function() {
   var dispatcher;
   beforeEach(function() {
-    dispatcher = new Dispatcher();
+    dispatcher = Dispatcher();
   });
 
-  it('passes actions to all registered callbacks', function() {
+  it('passes actions and data to all registered handlers', function() {
+    var handlers = [spy(), spy(), spy()];
+    handlers.forEach(function(handler) { dispatcher.register(handler); });
+
     var action = {};
-    var callbacks = [spy(), spy(), spy()];
-    callbacks.forEach(function(callback) { dispatcher.register(callback); });
+    var data = {};
+    dispatcher.dispatch(action, data);
 
-    dispatcher.dispatch(action);
-    callbacks.forEach(function(callback) {
-      assert.calledWith(callback, same(action));
+    handlers.forEach(function(handler) {
+      assert.calledWith(handler, same(action), same(data));
     });
   });
 
-  it('allows to unregister callbacks', function() {
-    var cb = spy();
-    [noop, cb, noop].forEach(function(callback) { dispatcher.register(callback); });
-    dispatcher.unregister(cb);
+  describe('data subtrees:', function() {
+    var data;
+    beforeEach(function() {
+      data = {a: {}, b: [null, null, {c: {}}]};
+    });
 
-    dispatcher.dispatch({});
-    assert.notCalled(cb);
-  });
+    it('passes subtrees of the data to handlers, depending on registration', function() {
+      var a = spy();
+      var b = spy();
+      dispatcher.register(a, ['a']);
+      dispatcher.register(b, ['b', 2]);
 
-  it('allows to unregister callbacks that have not been registered', function() {
-    var cb = function() {};
+      dispatcher.dispatch({}, data);
+      assert.calledWith(a, {}, same(data.a));
+      assert.calledWith(b, {}, same(data.b[2]));
+    });
 
-    assert.doesNotThrow(function() {
-      dispatcher.unregister(cb);
+    it('allows keypath to be strings', function() {
+      var a = spy();
+      var b = spy();
+      dispatcher.register(a, 'a');
+      dispatcher.register(b, 'b.2.c');
+
+      dispatcher.dispatch({}, data);
+      assert.calledWith(a, {}, same(data.a));
+      assert.calledWith(b, {}, same(data.b[2].c));
+    });
+
+    it('allows handlers to be registered with multiple subpaths', function() {
+      var handler = spy();
+      dispatcher.register(handler, ['a'], [], 'b.2');
+
+      dispatcher.dispatch({}, data);
+      assert.calledWith(handler, any, same(data.a), same(data), same(data.b[2]));
+    });
+
+    it('uses the passed in `get` function to retrieve sub-objects', function() {
+      var get = stub();
+      var keypath1 = ['a', 'b', 'c'];
+      var keypath2 = 'de.fg.hi';
+      var keypath3 = ['jk', 0, 'lm'];
+      var handler = spy();
+      data = [{}, {}, {}];
+
+      dispatcher = Dispatcher(get);
+      dispatcher.register(handler, keypath1, keypath2);
+      dispatcher.register(handler, keypath3);
+      get.withArgs(same(data), keypath1).returns(data[0]);
+      get.withArgs(same(data), keypath2.split('.')).returns(data[1]);
+      get.withArgs(same(data), keypath3).returns(data[2]);
+
+      dispatcher.dispatch({}, data);
+      assert.calledWith(handler, any, same(data[0]), same(data[1]));
+      assert.calledWith(handler, any, same(data[2]));
     });
   });
 
-  it('still dispatches to callbacks that are removed during that dispatch', function() {
-    var cb = spy();
-    var remove = function() { dispatcher.unregister(cb); };
-    [remove, cb, remove].forEach(function(callback) { dispatcher.register(callback); });
-    dispatcher.dispatch({});
+  it('allows to unregister handlers', function() {
+    var handler = spy();
+    dispatcher.register(noop);
+    var unregister = dispatcher.register(handler);
+    dispatcher.register(noop);
 
-    assert.called(cb);
+    unregister();
+    dispatcher.dispatch({}, {});
+    assert.notCalled(handler);
+  });
+
+  it('still dispatches ponm handlers that are removed during that dispatch', function() {
+    var handler = spy();
+    var remove;
+    var removeHandler = function() { remove(); };
+    dispatcher.register(removeHandler);
+    remove = dispatcher.register(handler);
+    dispatcher.register(removeHandler);
+
+    dispatcher.dispatch({}, {});
+
+    assert.called(handler);
   });
 
   it('does not dispatch to callbacks that are added during a dispatch in the same dispatch', function() {
-    var cb = spy();
-    function add() { dispatcher.register(cb); }
+    var handler = spy();
+    function add() { dispatcher.register(handler); }
     dispatcher.register(add);
-    dispatcher.dispatch({});
-
-    assert.notCalled(cb);
-  });
-
-  it('unregisters a function only for the registration keypaths', function() {
-    var callback1 = spy();
-    var callback2 = spy();
-    var callback3 = spy();
-
-    dispatcher.register(callback1, ['foo']);
-    dispatcher.register(callback2, ['foo']);
-    dispatcher.register(callback3, ['foo'], ['bar']);
-    dispatcher.unregister(callback1, ['foo', 'bar']);
-    dispatcher.unregister(callback2, ['foo']);
-    dispatcher.unregister(callback3, ['foo'], ['bar']);
+    dispatcher.register(noop);
     dispatcher.dispatch({}, {});
 
-    assert.called(callback1);
-    assert.notCalled(callback2);
-    assert.notCalled(callback3);
+    assert.notCalled(handler);
   });
 
-  it('supports deregistration with strings as keypaths', function() {
-    var callback = spy();
-    dispatcher.register(callback, ['ab', 'cd', 'ef'], ['ab', 'cd', 'gh']);
-    dispatcher.unregister(callback, 'ab.cd.ef', 'ab.cd.gh');
-    dispatcher.dispatch({}, {});
-    assert.notCalled(callback);
+  describe('data transformation:', function() {
+    it('uses the data returned by each handler to pass it to the next handler', function() {
+      var data1 = {};
+      var data2 = {};
+      var store1 = stub().returns(data1);
+      var store2 = stub().withArgs(same(data1)).returns(data2);
+      var store3 = spy();
+
+      dispatcher.register(store1);
+      dispatcher.register(store2);
+      dispatcher.register(store3);
+
+      dispatcher.dispatch({}, {});
+      assert.calledWith(store2, any, same(data1));
+      assert.calledWith(store3, any, same(data2));
+    });
   });
 
-  describe('consumption of data transformations:', function() {
+  xdescribe('consumption of data transformations:', function() {
     it('passes the passed-in action data to all transformations', function() {
       var transformations = [spy(), spy(), spy()];
       var action = {};

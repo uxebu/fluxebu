@@ -6,13 +6,53 @@ var iter = require('./iter');
 var slice = [].slice;
 
 function Dispatcher(get, set, equals) {
-  this.get = get || defaults.get;
-  this.set = set || defaults.set;
-  this.equals = equals || defaults.equals;
-  this.callbacks = [];
+  if (!get) get = defaults.get;
+  if (!set) set = defaults.set;
+  if (!equals) equals = defaults.equals;
+  var handlers = [];
+
+  function resolveKeypathOnThis(keypath) {
+    return keypath === null ? this : get(this, keypath);
+  }
+
+  return {
+    register: function(handler) {
+      var n = arguments.length;
+      var keypaths = n < 2 ? null : argumentsToKeypaths(arguments, 1);
+      handlers.push([handler, keypaths]);
+      return function() {
+        for (var i = 0, length = handlers.length; i < length; i++) {
+          if (handlers[i][0] === handler && handlers[i][1] === keypaths) {
+            handlers = handlers.slice(0, i).concat(handlers.slice(i + 1));
+            return;
+          }
+        }
+      };
+    },
+
+    dispatch: function(action, data) {
+      handlers.forEach(function(spec) {
+        var handler = spec[0];
+        var keypaths = spec[1];
+        var newData;
+
+        if (!keypaths) {
+          newData = handler(action, data);
+        } else if (keypaths.length === 1) {
+          newData = handler(action, get(data, keypaths[0]));
+        } else {
+          var subTrees = keypaths.map(resolveKeypathOnThis, data);
+          newData = handler.apply(null, [action].concat(subTrees));
+        }
+
+        if (newData) data = newData;
+      });
+    }
+  };
 }
 
-Dispatcher.prototype.dispatch = function(action, data, callback) {
+var Deespatcher = function() {};
+Deespatcher.prototype.dispatch = function(action, data, callback) {
   var callbacks = this.callbacks;
   var get = this.get;
 
@@ -31,7 +71,8 @@ Dispatcher.prototype.dispatch = function(action, data, callback) {
 
 };
 
-Dispatcher.prototype.register = function(callback) {
+
+Deespatcher.prototype.register = function(callback) {
   var n = arguments.length;
   var invoke =
     n > 2 ? invokeWithKeypaths :
@@ -42,7 +83,7 @@ Dispatcher.prototype.register = function(callback) {
   this.callbacks = this.callbacks.concat([[callback, invoke, keypaths]]);
 };
 
-Dispatcher.prototype.unregister = function(callback) {
+Deespatcher.prototype.unregister = function(callback) {
   var keypaths = argumentsToKeypaths(arguments);
   this.callbacks = this.callbacks.filter(function(spec) {
     return spec[0] !== callback || !arrayEquals(keypaths, spec[2]);
@@ -50,14 +91,14 @@ Dispatcher.prototype.unregister = function(callback) {
 };
 
 function ensureArrayKeypath(value) {
-  return typeof value === 'string' ? value.split('.') : value;
+  return (
+    typeof value === 'string' ? value.split('.') :
+    value.length === 0 ? null : value
+  );
 }
 
-function argumentsToKeypaths(args) {
-  var n = args.length;
-  return n > 2 ? slice.call(args, 1).map(ensureArrayKeypath) :
-    n === 2 ? ensureArrayKeypath(args[1]) :
-    undefined;
+function argumentsToKeypaths(args, start) {
+  return slice.call(args, start || 0).map(ensureArrayKeypath);
 }
 
 function invokeWithData(fn, action, data) {
