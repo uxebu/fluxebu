@@ -4,7 +4,7 @@ var defaults = require('./defaults');
 var slice = [].slice;
 
 function isIterator(maybeIterator) {
-  return maybeIterator && typeof maybeIterator == 'function';
+  return maybeIterator && typeof maybeIterator.next == 'function';
 }
 
 function Dispatcher(get, set, equals) {
@@ -51,13 +51,15 @@ function Dispatcher(get, set, equals) {
       var handler = spec[0];
       var keypaths = spec[1];
       data = dispatchActionOnHandler(action, data, handler, keypaths);
-        // dispatch([data[1]], promiseQueue, data, callback);
+      if (isIterator(data)) {
+        data = consumeIterator(data, actionQueue);
+      }
     }
 
     while ((action = actionQueue.shift())) {
       handlers.forEach(invokeHandler);
-      if (callback) callback(data, true);
     }
+    if (callback) callback(data, true);
   }
 
   return {
@@ -83,6 +85,21 @@ function ensureArrayKeypath(value) {
 
 function argumentsToKeypaths(args, start) {
   return slice.call(args, start || 0).map(ensureArrayKeypath);
+}
+
+function consumeIterator(iterator, actionQueue) {
+  var result = iterator.next();
+  var data = result.value;
+
+  while (!result.done) {
+    result = iterator.next();
+    if (result.value) {
+      // ignore `undefined` values, e.g. from `{done: true}`
+      actionQueue.push(result.value);
+    }
+  }
+
+  return data;
 }
 
 exports = module.exports = Dispatcher;

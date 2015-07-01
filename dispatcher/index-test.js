@@ -173,28 +173,122 @@ describe('dispatcher:', function() {
   });
 
   describe('additional actions to dispatch:', function() {
-    it('dispatches an additional action scheduled by a store after the first action', function() {
-      var action1 = {};
-      var action2 = {};
-      var store1 = spy();
-      var store2 =
-        stub()
-          .withArgs(same(action1))
-          .returns(iteratorOf({a: 2}, action2));
-      var store3 = spy();
-
+    var action1, action2, action3, action4, action5, store1, store2, store3;
+    beforeEach(function() {
+      action1 = {action: 1};
+      action2 = {action: 2};
+      action3 = {action: 3};
+      action4 = {action: 4};
+      action5 = {action: 5};
+      store1 = stub();
+      store2 = stub();
+      store3 = stub();
       dispatcher.register(store1);
       dispatcher.register(store2);
       dispatcher.register(store3);
+    });
+
+    it('dispatches an additional action scheduled by a store after the first action', function() {
+      store2
+        .withArgs(same(action1))
+        .returns(iteratorOf({a: 2}, action2));
 
       dispatcher.dispatch(action1, {a: 1});
 
-      assert.calledWith(store1.firstCall, same(action1), any);
-      assert.calledWith(store2.firstCall, same(action1), any);
-      assert.calledWith(store3.firstCall, same(action1), any);
-      assert.calledWith(store1.secondCall, same(action2), any);
-      assert.calledWith(store2.secondCall, same(action2), any);
-      assert.calledWith(store3.secondCall, same(action2), any);
+      [action1, action2].forEach(function(action, i) {
+        assert.calledWith(store1.getCall(i), same(action), any);
+        assert.calledWith(store2.getCall(i), same(action), any);
+        assert.calledWith(store3.getCall(i), same(action), any);
+      });
+    });
+
+    it('dispatches multiple additional actions scheduled by a store after the first action', function() {
+      store2
+        .withArgs(same(action1))
+        .returns(iteratorOf({a: 2}, action2, action3, action4));
+
+      dispatcher.dispatch(action1, {a: 1});
+
+      [action1, action2, action3, action4].forEach(function(action, i) {
+        assert.calledWith(store1.getCall(i), same(action), any);
+        assert.calledWith(store2.getCall(i), same(action), any);
+        assert.calledWith(store3.getCall(i), same(action), any);
+      });
+    });
+
+    it('dispatches multiple additional actions scheduled by different stores after other actions', function() {
+      store1
+        .withArgs(same(action1))
+        .returns(iteratorOf(undefined, action2));
+      store2
+        .withArgs(same(action3))
+        .returns(iteratorOf(undefined, action4, action5));
+      store3
+        .withArgs(same(action2))
+        .returns(iteratorOf(undefined, action3));
+
+      dispatcher.dispatch(action1, {});
+
+      [action1, action2, action3, action4, action5].forEach(function(action, i) {
+        assert.calledWith(store1.getCall(i), same(action), any);
+        assert.calledWith(store2.getCall(i), same(action), any);
+        assert.calledWith(store3.getCall(i), same(action), any);
+      });
+    });
+
+    it('handles values contained by the eventual call to `iterator.next()`, too', function() {
+      var next = stub();
+      next.returns({done: true});
+      next.onFirstCall().returns({value: undefined});
+      next.onSecondCall().returns({value: action2});
+      next.onThirdCall().returns({value: action3, done: true});
+
+      store1
+        .withArgs(same(action1))
+        .returns({next: next});
+
+      dispatcher.dispatch(action1, undefined);
+
+      [action1, action2, action3].forEach(function(action, i) {
+        assert.calledWith(store1.getCall(i), same(action), any);
+        assert.calledWith(store2.getCall(i), same(action), any);
+        assert.calledWith(store3.getCall(i), same(action), any);
+      });
+    });
+
+    it('filters out `undefined` values', function() {
+      store3
+        .withArgs(same(action1))
+        .returns(iteratorOf({}, undefined, action2, undefined, undefined, action3));
+
+      dispatcher.dispatch(action1, {});
+
+      [action1, action2, action3].forEach(function(action, i) {
+        assert.calledWith(store1.getCall(i), same(action), any);
+        assert.calledWith(store2.getCall(i), same(action), any);
+        assert.calledWith(store3.getCall(i), same(action), any);
+      });
+    });
+
+    it('invokes the callback only once after all actions have run, with the eventual data', function() {
+      var data1 = {data: 1};
+      var data2 = {data: 2};
+      var data3 = {data: 3};
+      var onDone = spy();
+
+      store3
+        .withArgs(same(action1))
+        .returns(iteratorOf(data1, action2));
+      store2
+        .withArgs(same(action2))
+        .returns(iteratorOf(data2, action3));
+      [store1, store2, store3].forEach(function(store) {
+        store.withArgs(same(action3)).returns(data3);
+      });
+
+      dispatcher.dispatch(action1, {}, onDone);
+      assert.calledOnce(onDone);
+      assert.calledWith(onDone, data3, true);
     });
   });
 });
