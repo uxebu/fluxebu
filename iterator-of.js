@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = function iterateOf() {
+module.exports = function iteratorOf() {
   var args = arguments;
   var i = -1;
   var n = args.length;
