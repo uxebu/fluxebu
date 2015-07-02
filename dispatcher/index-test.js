@@ -90,6 +90,59 @@ describe('dispatcher:', function() {
       assert.calledWith(handler, any, same(data[0]), same(data[1]));
       assert.calledWith(handler, any, same(data[2]));
     });
+
+    describe('`equals` function:', function() {
+      var action1, action2, store1, store2;
+      beforeEach(function() {
+        action1 = {action: 1};
+        action2 = {action: 2};
+        store1 = stub();
+        store2 = stub();
+
+        store1
+          .onFirstCall(action1)
+          .returns(iteratorOf('a', action2));
+
+        store2
+          .withArgs(action2)
+          .returns(iteratorOf('b'));
+      });
+
+      it('uses the passed-in `equals` function to decide whether to call the update handler', function(done) {
+        function equals(a, b) { return a === b; }
+        dispatcher = Dispatcher(undefined, undefined, equals);
+
+        dispatcher.register(store1);
+        dispatcher.register(store2);
+
+        var onUpdate = spy(function(_, isDone) {
+          if (!isDone) return;
+
+          assert.neverCalledWith(onUpdate, 'a', false);
+          done();
+        });
+        dispatcher.dispatch({}, 'a', onUpdate);
+      });
+
+      it('still calls the update handler after all actions have been handled', function(done) {
+        function equals() { return true; }
+        dispatcher = Dispatcher(undefined, undefined, equals);
+
+        dispatcher.register(store1);
+        dispatcher.register(store2);
+
+        var onUpdate = spy(function(_, isDone) {
+          if (!isDone) return;
+
+          assert.calledWith(onUpdate, 'b', true);
+          done();
+        });
+        dispatcher.dispatch({}, 'a', onUpdate);
+      });
+    });
+
+    it('uses the passed in `equals` function to decide whether to call the data change handler', function() {
+    });
   });
 
   it('allows to unregister handlers', function() {

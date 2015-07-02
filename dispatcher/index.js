@@ -75,20 +75,29 @@ function Dispatcher(get, set, equals) {
       });
     }
 
-    function invokeHandler(spec) {
-      // `this` should be the action to dispatch
+    function invokeHandler(spec, action, currentData) {
       var handler = spec[0];
       var keypaths = spec[1];
-      data = dispatchActionOnHandler(this, data, handler, keypaths, actionQueue, handlePromise);
+      return dispatchActionOnHandler(action, currentData, handler, keypaths, actionQueue, handlePromise);
+    }
+
+    function invokeHandlers(action, currentData) {
+      return handlers.reduce(function(mutatedData, spec) {
+        return invokeHandler(spec, action, mutatedData);
+      }, currentData);
     }
 
     function runDispatch() {
       var action;
+      var currentData = data;
       while ((action = actionQueue.shift())) {
-        handlers.forEach(invokeHandler, action);
+        currentData = invokeHandlers(action, currentData);
       }
-      if (callback) {
-        callback(data, pendingPromises.length === 0);
+
+      var isDone = pendingPromises.length === 0;
+      if (callback && (isDone || !equals(data, currentData))) {
+        data = currentData;
+        callback(currentData, isDone);
       }
     }
 
