@@ -152,11 +152,28 @@ describe('dispatcher:', function() {
       var keypath = ['abc', 'def'];
       var set = spy();
 
-      dispatcher = new Dispatcher(undefined, set);
+      dispatcher = Dispatcher(undefined, set);
       dispatcher.register(handler1, keypath);
 
       dispatcher.dispatch({}, data1);
       assert.calledWith(set, same(data1), keypath, same(data2));
+    });
+
+    it('uses the return value of the passed in `set` function as data', function() {
+      var handler = stub().returns(data2);
+      var handler2 = spy();
+      var keypath = ['abc', 'def'];
+      var returnValue = {};
+      var set = stub();
+      set
+        .withArgs(same(data1), keypath, same(data2))
+        .returns(returnValue);
+
+      dispatcher = Dispatcher(undefined, set);
+      dispatcher.register(handler, keypath);
+      dispatcher.register(handler2);
+      dispatcher.dispatch({}, data1);
+      assert.calledWith(handler2, any, same(returnValue));
     });
 
     it('calls the passed-in callback with the result of the last handler', function() {
@@ -169,7 +186,6 @@ describe('dispatcher:', function() {
 
       assert.calledWith(callback, same(data1), true);
     });
-
   });
 
   describe('additional actions to dispatch:', function() {
@@ -289,6 +305,120 @@ describe('dispatcher:', function() {
       dispatcher.dispatch(action1, {}, onDone);
       assert.calledOnce(onDone);
       assert.calledWith(onDone, data3, true);
+    });
+
+    describe('promises:', function() {
+      var data1, data2, data3, data4;
+      beforeEach(function() {
+        data1 = {data: 1};
+        data2 = {data: 2};
+        data3 = {data: 3};
+        data4 = {data: 4};
+
+        store1
+          .withArgs(same(action1))
+          .returns(iteratorOf(data2, Promise.resolve(action3), action4));
+
+        store2
+          .withArgs(same(action1))
+          .returns(iteratorOf(data3, action2));
+
+        store3
+          .withArgs(same(action3))
+          .returns(iteratorOf(data4, action5));
+      });
+
+      it('can wait for future actions wrapped with promises', function(done) {
+        dispatcher.dispatch(action1, data1, function(_, isDone) {
+          if (!isDone) return;
+
+          [action1, action2, action3, action4, action5].forEach(function(action, i) {
+            assert.calledWith(store1.getCall(i), same(action), any);
+            assert.calledWith(store2.getCall(i), same(action), any);
+            assert.calledWith(store3.getCall(i), same(action), any);
+          });
+          done();
+        });
+      });
+
+      it('uses data returned by the stores, correctly handing it on on following dispatches', function(done) {
+        dispatcher.dispatch(action1, data1, function(eventualData, isDone) {
+          if (!isDone) return;
+
+          [data1, data3, data3, data4, data4].forEach(function(data, i) {
+            assert.calledWith(store1.getCall(i), any, same(data));
+          });
+          [data2, data3, data3, data4, data4].forEach(function(data, i) {
+            assert.calledWith(store2.getCall(i), any, same(data));
+          });
+          [data3, data3, data3, data4, data4].forEach(function(data, i) {
+            assert.calledWith(store3.getCall(i), any, same(data));
+          });
+
+          done();
+        });
+      });
+
+      it('works correctly with subtrees', function(done) {
+        dispatcher = Dispatcher();
+        var dataTree = {a: null, b: null, c: {d: null}};
+
+        var storeA = stub();
+        var storeB = stub();
+        var storeC = stub();
+
+        storeA
+          .withArgs(same(action1))
+          .returns(iteratorOf(undefined, Promise.resolve(action2)));
+
+        storeA
+          .withArgs(same(action1))
+          .returns('a');
+
+        storeB
+          .withArgs(same(action2))
+          .returns(iteratorOf('b', Promise.resolve(action3)));
+
+        storeC
+          .withArgs(same(action3))
+          .returns(iteratorOf('d', Promise.resolve(action4)));
+
+        dispatcher.register(storeA, ['a']);
+        dispatcher.register(storeB, ['b']);
+        dispatcher.register(storeC, ['c']);
+        dispatcher.dispatch(action1, dataTree, function(updatedData, isDone) {
+          if (!isDone) return;
+          done();
+
+          assert.deepEqual(updatedData, {a: 'a', b: 'b', c: {d: 'd'}});
+        });
+      });
+
+      it('calls the callback for every data change', function(done) {
+        var store4 = stub();
+        var action6 = {action: 6};
+        var eventualData = {data: 'eventual'};
+        dispatcher.register(store4);
+
+        store4
+          .withArgs(same(action3))
+          .returns(iteratorOf(undefined, Promise.resolve(action6)));
+        store4
+          .withArgs(same(action6))
+          .returns(eventualData);
+
+        var callback = spy(function(_, isDone) {
+          if (!isDone) return;
+
+          assert.calledWith(callback.firstCall, same(data3), false);
+          assert.calledWith(callback.secondCall, same(data4), false);
+          assert.calledWith(callback.thirdCall, same(eventualData), true);
+
+          done();
+        });
+
+        dispatcher.dispatch(action1, data1, callback);
+      });
     });
   });
 });

@@ -1,10 +1,15 @@
 'use strict';
 
+var immediate = require('immediate');
 var defaults = require('./defaults');
 var slice = [].slice;
 
 function isIterator(maybeIterator) {
   return maybeIterator && typeof maybeIterator.next == 'function';
+}
+
+function isPromise(maybePromise) {
+  return maybePromise && typeof maybePromise.then == 'function';
 }
 
 function Dispatcher(get, set, equals) {
@@ -26,12 +31,11 @@ function Dispatcher(get, set, equals) {
     }
   }
 
-  function dispatchActionOnHandler(action, data, handler, keypaths) {
+  function dispatchActionOnHandler(action, data, handler, keypaths, actionQueue, handlePromise) {
     var newData;
 
     if (!keypaths) {
       newData = handler(action, data);
-      return newData === undefined ? data : newData;
     } else {
       var firstKeyPath = keypaths[0];
       if (keypaths.length === 1) {
@@ -40,26 +44,55 @@ function Dispatcher(get, set, equals) {
         var subTrees = keypaths.map(resolveKeypathOnThis, data);
         newData = handler.apply(null, [action].concat(subTrees));
       }
-      if (newData) set(data, firstKeyPath, newData);
-      return data;
     }
+
+    if (isIterator(newData)) {
+      var iterator = newData;
+      var next = iterator.next();
+      newData = next.value;
+      consumeIterator(iterator, actionQueue, handlePromise);
+    }
+
+    return (
+      newData === undefined ? data :
+      firstKeyPath ? set(data, firstKeyPath, newData) :
+      newData
+    );
   }
 
-  function dispatch(actionQueue, promiseQueue, data, callback) {
-    var action;
+  function dispatch(actionQueue, pendingPromises, data, callback) {
+    function handlePromise(promise, maybeUnfinishedIterator) {
+      pendingPromises.push(promise);
+      function continueDispatch() {
+        consumeIterator(maybeUnfinishedIterator, actionQueue, handlePromise);
+        removeFromArray(pendingPromises, promise);
+        runDispatch();
+      }
+
+      promise.then(function(action) {
+        actionQueue.push(action);
+        immediate(continueDispatch); // get out of promise error handling
+      });
+    }
+
     function invokeHandler(spec) {
+      // `this` should be the action to dispatch
       var handler = spec[0];
       var keypaths = spec[1];
-      data = dispatchActionOnHandler(action, data, handler, keypaths);
-      if (isIterator(data)) {
-        data = consumeIterator(data, actionQueue);
+      data = dispatchActionOnHandler(this, data, handler, keypaths, actionQueue, handlePromise);
+    }
+
+    function runDispatch() {
+      var action;
+      while ((action = actionQueue.shift())) {
+        handlers.forEach(invokeHandler, action);
+      }
+      if (callback) {
+        callback(data, pendingPromises.length === 0);
       }
     }
 
-    while ((action = actionQueue.shift())) {
-      handlers.forEach(invokeHandler);
-    }
-    if (callback) callback(data, true);
+    runDispatch();
   }
 
   return {
@@ -87,19 +120,28 @@ function argumentsToKeypaths(args, start) {
   return slice.call(args, start || 0).map(ensureArrayKeypath);
 }
 
-function consumeIterator(iterator, actionQueue) {
-  var result = iterator.next();
-  var data = result.value;
+function consumeIterator(iterator, actionQueue, handlePromise) {
+  do {
+    var result = iterator.next();
+    var value = result.value;
 
-  while (!result.done) {
-    result = iterator.next();
-    if (result.value) {
-      // ignore `undefined` values, e.g. from `{done: true}`
-      actionQueue.push(result.value);
+    if (isPromise(value)) {
+      handlePromise(value, iterator);
+      break;
+    } else if (value !== undefined) {
+      actionQueue.push(value);
     }
-  }
+  } while (!result.done);
+}
 
-  return data;
+function removeFromArray(array, value) {
+  var i = array.indexOf(value);
+  if (i !== -1) {
+    for (var n = array.length - 1; i < n; i++) {
+      array[i] = array[i + 1];
+    }
+    array.length = n;
+  }
 }
 
 exports = module.exports = Dispatcher;
