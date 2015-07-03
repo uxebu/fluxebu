@@ -60,7 +60,7 @@ function Dispatcher(get, set, equals) {
     );
   }
 
-  function dispatch(actionQueue, pendingPromises, data, callback) {
+  function dispatch(actionQueue, pendingPromises, dataPointer, callback) {
     function handlePromise(promise, maybeUnfinishedIterator) {
       pendingPromises.push(promise);
       function continueDispatch() {
@@ -89,14 +89,14 @@ function Dispatcher(get, set, equals) {
 
     function runDispatch() {
       var action;
-      var currentData = data;
+      var currentData = dataPointer.get();
       while ((action = actionQueue.shift())) {
         currentData = invokeHandlers(action, currentData);
       }
 
       var isDone = pendingPromises.length === 0;
-      if (callback && (isDone || !equals(data, currentData))) {
-        data = currentData;
+      if (callback && (isDone || !equals(dataPointer.get(), currentData))) {
+        dataPointer.set(currentData);
         callback(currentData, isDone);
       }
     }
@@ -112,8 +112,8 @@ function Dispatcher(get, set, equals) {
       return function remove() { removeHandler(handler, keypaths); };
     },
 
-    dispatch: function(action, data, callback) {
-      dispatch([action], [], data, callback);
+    dispatch: function(action, dataPointer, callback) {
+      dispatch([action], [], dataPointer, callback);
     }
   };
 }
