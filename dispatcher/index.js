@@ -94,9 +94,9 @@ function Dispatcher(get, set, equals) {
         currentData = invokeHandlers(action, currentData);
       }
 
+      dataPointer.set(currentData);
       var isDone = pendingPromises.length === 0;
       if (callback && (isDone || !equals(dataPointer.get(), currentData))) {
-        dataPointer.set(currentData);
         callback(currentData, isDone);
       }
     }

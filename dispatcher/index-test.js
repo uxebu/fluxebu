@@ -158,7 +158,7 @@ describe('dispatcher:', function() {
     assert.notCalled(handler);
   });
 
-  it('still dispatches ponm handlers that are removed during that dispatch', function() {
+  it('still dispatches on handlers that are removed during a dispatch', function() {
     var handler = spy();
     var remove;
     var removeHandler = function() { remove(); };
@@ -200,6 +200,21 @@ describe('dispatcher:', function() {
       dispatcher.dispatch({}, DataPointer({}));
       assert.calledWith(handler2, any, same(data1));
       assert.calledWith(handler3, any, same(data2));
+    });
+
+    it('sets the final data on the data pointer, too', function() {
+      var handler1 = stub().returns(data1);
+      var handler2 = stub().returns(data2);
+
+      dispatcher.register(handler1);
+      dispatcher.register(handler2);
+
+      var dataPointer = DataPointer({});
+      spy(dataPointer, 'set');
+
+      dispatcher.dispatch({}, dataPointer);
+      assert.calledWith(dataPointer.set, same(data2));
+      assert.neverCalledWith(dataPointer.set, same(data1));
     });
 
     it('merges returned sub-tree data into the root object using the provided `set` function ', function() {
@@ -362,6 +377,29 @@ describe('dispatcher:', function() {
       assert.calledWith(onDone, data3, true);
     });
 
+    it('invokes the data setter only once after all actions have run, with the eventual data', function() {
+      var data1 = {data: 1};
+      var data2 = {data: 2};
+      var data3 = {data: 3};
+
+      store3
+        .withArgs(same(action1))
+        .returns(iteratorOf(data1, action2));
+      store2
+        .withArgs(same(action2))
+        .returns(iteratorOf(data2, action3));
+      [store1, store2, store3].forEach(function(store) {
+        store.withArgs(same(action3)).returns(data3);
+      });
+
+      var dataPointer = DataPointer({});
+      spy(dataPointer, 'set');
+
+      dispatcher.dispatch(action1, dataPointer);
+      assert.calledOnce(dataPointer.set);
+      assert.calledWith(dataPointer.set, data3);
+    });
+
     describe('promises:', function() {
       var data1, data2, data3, data4;
       beforeEach(function() {
@@ -473,6 +511,33 @@ describe('dispatcher:', function() {
         });
 
         dispatcher.dispatch(action1, DataPointer(data1), callback);
+      });
+
+      it('calls sets on the data pointer for every data change', function(done) {
+        var store4 = stub();
+        var action6 = {action: 6};
+        var eventualData = {data: 'eventual'};
+        dispatcher.register(store4);
+
+        var dataPointer = DataPointer(data1);
+        spy(dataPointer, 'set');
+
+        store4
+          .withArgs(same(action3))
+          .returns(iteratorOf(undefined, Promise.resolve(action6)));
+        store4
+          .withArgs(same(action6))
+          .returns(eventualData);
+
+        dispatcher.dispatch(action1, dataPointer, function(_, isDone) {
+          if (!isDone) return;
+
+          assert.calledWith(dataPointer.set.firstCall, same(data3));
+          assert.calledWith(dataPointer.set.secondCall, same(data4));
+          assert.calledWith(dataPointer.set.thirdCall, same(eventualData));
+
+          done();
+        });
       });
     });
   });
