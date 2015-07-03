@@ -7,9 +7,7 @@ module.exports = function StatefulDispatcher(dispatcher, initialData, onData) {
   function wrappedOnData(data) { onData(data); }
 
   return {
-    register: function register() {
-      return dispatcher.register.apply(dispatcher, arguments);
-    },
+    register: dispatcher.register,
 
     dispatch: function(action) {
       dispatcher.dispatch(action, dataPointer, wrappedOnData);

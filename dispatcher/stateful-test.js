@@ -49,7 +49,7 @@ describe('stateful dispatcher wrapper:', function() {
     it('wraps the passed in data in a data pointer and forwards that', function() {
       var data = {arbitrary: 'data'};
       var statefulDispatcher = StatefulDispatcher(dispatcher, data);
-      statefulDispatcher.dispatch({}, data);
+      statefulDispatcher.dispatch({});
 
       var dataPointer = dispatcher.dispatch.firstCall.args[1];
       assert.equal(dataPointer.get(), data);
