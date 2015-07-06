@@ -1,6 +1,6 @@
 {
   "name": "fluxebu",
-  "version": "0.2.0-alpha.2",
+  "version": "0.2.0-alpha.3",
   "description": "Another approach to flux, targeted at server and browser.",
   "main": "index.js",
   "scripts": {
