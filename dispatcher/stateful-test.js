@@ -101,4 +101,40 @@ describe('stateful dispatcher wrapper:', function() {
       assert.calledWithExactly(onData, 'b');
     });
   });
+
+  describe('binding action creators:', function() {
+    var statefulDispatcher, actionCreatorA, actionCreatorB, actionCreatorC;
+    beforeEach(function() {
+      statefulDispatcher = StatefulDispatcher(dispatcher);
+      spy(statefulDispatcher, 'dispatch');
+      actionCreatorA = spy(function() { return {type: 'A'}; });
+      actionCreatorB = spy(function() { return {type: 'B'}; });
+      actionCreatorC = spy(function() { return {type: 'C'}; });
+    });
+
+    it('wraps action creators, so that their return value is dispatched on the dispatcher', function() {
+      var actions = statefulDispatcher.bindActions({
+        a: actionCreatorA,
+        b: actionCreatorB,
+        c: actionCreatorC
+      });
+
+      actions.a();
+      assert.calledWith(dispatcher.dispatch, {type: 'A'});
+
+      actions.b();
+      assert.calledWith(dispatcher.dispatch, {type: 'B'});
+
+      actions.c();
+      assert.calledWith(dispatcher.dispatch, {type: 'C'});
+    });
+
+    it('passes all arguments passed to the wrapper on to the action creator', function() {
+      var actions = statefulDispatcher.bindActions({a: actionCreatorA});
+      var arbitraryObject = {arbitrary: 'object'};
+      actions.a(1, 2, arbitraryObject, null, true, 'abc');
+
+      assert.calledWith(actionCreatorA, 1, 2, same(arbitraryObject), null, true, 'abc');
+    });
+  });
 });
