@@ -8,6 +8,7 @@ sinon.assert.expose(assert, {prefix: ''});
 var stub = sinon.stub;
 var spy = sinon.spy;
 var same = sinon.match.same;
+var any = sinon.match.any;
 
 var StatefulDispatcher = require('./stateful');
 
@@ -46,31 +47,36 @@ describe('stateful dispatcher wrapper:', function() {
       assert.calledWith(dispatcher.dispatch, same(action));
     });
 
-    it('wraps the passed in data in a data pointer and forwards that', function() {
+    it('forwards the passed-in data to the wrapped dispatcher', function() {
       var data = {arbitrary: 'data'};
       var statefulDispatcher = StatefulDispatcher(dispatcher, data);
+
       statefulDispatcher.dispatch({});
 
-      var dataPointer = dispatcher.dispatch.firstCall.args[1];
-      assert.equal(dataPointer.get(), data);
-
-      var newData = {other: 'data'};
-      dataPointer.set(newData);
-      assert.equal(dataPointer.get(), newData);
+      assert.calledWith(dispatcher.dispatch, any, same(data));
     });
 
-    it('uses the same shared data pointer across dispatches', function() {
-      var statefulDispatcher = StatefulDispatcher(dispatcher, {});
+    it('uses data provided by the wrapped dispatcher for the next dispatch', function() {
+      var statefulDispatcher = StatefulDispatcher(dispatcher);
+      var data = {arbitrary: 'data'};
       statefulDispatcher.dispatch({});
+      dispatcher.dispatch.callArg(2, data);
       statefulDispatcher.dispatch({});
-      statefulDispatcher.dispatch({});
+      assert.calledWith(dispatcher.dispatch.secondCall, any, data);
+    });
 
-      var firstCallDataPointer = dispatcher.dispatch.firstCall.args[1];
-      var secondCallDataPointer = dispatcher.dispatch.secondCall.args[1];
-      var thirdCallDataPointer = dispatcher.dispatch.thirdCall.args[1];
+    it('passes the optional `updated data` getter to the wrapped dispatcher, to sync data across dispatches', function() {
+      var statefulDispatcher = StatefulDispatcher(dispatcher);
+      statefulDispatcher.dispatch({});
+      var updatedData = dispatcher.dispatch.args[0][3];
+      var data1 = {};
+      var data2 = {};
 
-      assert.equal(firstCallDataPointer, secondCallDataPointer);
-      assert.equal(firstCallDataPointer, thirdCallDataPointer);
+      dispatcher.dispatch.callArg(2, data1);
+      assert.equal(updatedData(), data1);
+
+      dispatcher.dispatch.callArg(2, data2);
+      assert.equal(updatedData(), data2);
     });
 
     it('uses the passed-in data callback for all dispatches', function() {

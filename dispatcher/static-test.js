@@ -8,6 +8,7 @@ sinon.assert.expose(assert, {prefix: ''});
 var stub = sinon.stub;
 var spy = sinon.spy;
 var same = sinon.match.same;
+var any = sinon.match.any;
 
 var StaticDispatcher = require('./static');
 
@@ -40,23 +41,17 @@ describe('static dispatcher wrapper:', function() {
     it('forwards the passed-in action to the wrapped dispatcher', function() {
       var staticDispatcher = StaticDispatcher(dispatcher);
       var action = {arbitrary: 'action'};
-
       staticDispatcher.dispatch(action);
 
       assert.calledWith(dispatcher.dispatch, same(action));
     });
 
-    it('wraps the passed in data in a data pointer and forwards that', function() {
+    it('forwards the passed-in data to the wrapped dispatcher', function() {
       var data = {arbitrary: 'data'};
       var staticDispatcher = StaticDispatcher(dispatcher);
       staticDispatcher.dispatch({}, data);
 
-      var dataPointer = dispatcher.dispatch.firstCall.args[1];
-      assert.equal(dataPointer.get(), data);
-
-      var newData = {other: 'data'};
-      dataPointer.set(newData);
-      assert.equal(dataPointer.get(), newData);
+      assert.calledWith(dispatcher.dispatch, any, same(data));
     });
 
     it('passes on the callback to the wrapped dispatcher, filtering out all but the final call', function() {

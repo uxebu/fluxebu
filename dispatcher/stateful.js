@@ -1,16 +1,20 @@
 'use strict';
 
-var DataPointer = require('./data-pointer');
+module.exports = function StatefulDispatcher(dispatcher, data, onData) {
+  function wrappedOnData(newData) {
+    data = newData;
+    if (onData) onData(newData);
+  }
 
-module.exports = function StatefulDispatcher(dispatcher, initialData, onData) {
-  var dataPointer = DataPointer(initialData);
-  function wrappedOnData(data) { onData(data); }
+  function getCurrentData() {
+    return data;
+  }
 
   return {
     register: dispatcher.register,
 
     dispatch: function(action) {
-      dispatcher.dispatch(action, dataPointer, wrappedOnData);
+      dispatcher.dispatch(action, data, wrappedOnData, getCurrentData);
     }
   };
 };
