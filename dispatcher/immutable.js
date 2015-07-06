@@ -7,7 +7,7 @@ function get(object, keypath) {
 }
 
 function set(object, keypath, value) {
-  return object.setIn(object, keypath, value);
+  return object.setIn(keypath, value);
 }
 
 function equals(a, b) {

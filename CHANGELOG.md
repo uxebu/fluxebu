@@ -1,3 +1,6 @@
+# v0.2.0-alpha.3 / 2015-07-06 12:35 GMT
+- Fix setter for immutable.js
+
 # v0.2.0-alpha.2 / 2015-07-06 09:11 GMT
 - Add helper to bind action creators to stateful dispatcher
 
