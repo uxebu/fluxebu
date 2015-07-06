@@ -1,13 +1,23 @@
 'use strict';
 
-exports.get = function get(object, keypath) {
+var Dispatcher = require('.');
+
+function get(object, keypath) {
   return object.getIn(keypath);
-};
+}
 
-exports.set = function set(object, keypath, value) {
+function set(object, keypath, value) {
   return object.setIn(object, keypath, value);
+}
+
+function equals(a, b) {
+  return a === b || a.equals(b);
+}
+
+exports = module.exports = function DispatcherForImmutable() {
+  return Dispatcher(get, set, equals);
 };
 
-exports.equals = function equals(a, b) {
-  return a === b || a.equals(b);
-};
+exports.get = get;
+exports.set = set;
+exports.equals = equals;
