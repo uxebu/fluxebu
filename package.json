@@ -1,0 +1,36 @@
+{
+  "name": "fluxebu",
+  "version": "0.2.0-alpha.3",
+  "description": "Another approach to flux, targeted at server and browser.",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "mocha --reporter dot '*-test.js' '*/*-test.js' -t 20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uxebu/fluxebu.git"
+  },
+  "keywords": [
+    "flux",
+    "server",
+    "browser",
+    "isomorphic",
+    "stateless"
+  ],
+  "author": "David Aurelio <da@uxebu.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/uxebu/fluxebu/issues"
+  },
+  "homepage": "https://github.com/uxebu/fluxebu#readme",
+  "devDependencies": {
+    "eslint": "^0.23.0",
+    "mocha": "^2.2.5",
+    "pinkie-promise": "^1.0.0",
+    "sinon": "^1.15.3"
+  },
+  "dependencies": {
+    "immediate": "^3.2.1"
+  }
+}
