@@ -23,16 +23,40 @@ describe('dispatcher:', function() {
     dispatcher = Dispatcher();
   });
 
-  it('passes actions and data to all registered handlers', function() {
-    var handlers = [spy(), spy(), spy()];
-    handlers.forEach(function(handler) { dispatcher.register(handler); });
+  describe('dispatch:', function() {
+    var action, data, handlers;
+    beforeEach(function() {
+      action = {};
+      data = {};
+      handlers = [spy(), spy(), spy()];
+      handlers.forEach(function(handler) { dispatcher.register(handler); });
+    });
 
-    var action = {};
-    var data = {};
-    dispatcher.dispatch(action, data);
+    it('passes actions and data to all registered handlers', function() {
+      dispatcher.dispatch(action, data);
 
-    handlers.forEach(function(handler) {
-      assert.calledWith(handler, same(action), same(data));
+      handlers.forEach(function(handler) {
+        assert.calledWith(handler, same(action), same(data));
+      });
+    });
+
+    it('allows to dispatch a promise via the dispatch method', function(done) {
+      var fakePromise = {then: stub()};
+      dispatcher.dispatch(fakePromise, data, function(_, isDone) {
+        if (!isDone) return;
+
+        handlers.forEach(function(handler) {
+          assert.calledOnce(handler);
+          assert.calledWith(handler, same(action), same(data));
+        });
+        done();
+      });
+
+      fakePromise.then.yield(action);
+    });
+
+    it('uses a provided ', function() {
+
     });
   });
 
@@ -478,12 +502,16 @@ describe('dispatcher:', function() {
   });
 
   describe('retrieval of data that has changed over time:', function() {
+    var fakePromise, data, replacedData;
+    beforeEach(function() {
+      fakePromise = {then: stub()};
+      data = {initial: 'data'};
+      replacedData = {replaced: 'data'};
+    });
+
     it('uses the optional passed-in function to re-fetch after promises resolve', function(done) {
       var action1 = {action: 1};
       var action2 = {action: 2};
-      var fakePromise = {then: stub()};
-      var data = {initial: 'data'};
-      var replacedData = {replaced: 'data'};
       var store = stub()
         .withArgs(action1)
         .returns(iteratorOf(undefined, fakePromise));
@@ -498,6 +526,22 @@ describe('dispatcher:', function() {
 
       dispatcher.dispatch(action1, data, onData, stub().returns(replacedData));
       fakePromise.then.yield(action2);
+    });
+
+    it('also uses the getter when dispatching a promise directly', function(done) {
+      var action = {action: 1};
+      var store = spy();
+      dispatcher.register(store);
+
+      function onData(_, isDone) {
+        if (!isDone) return;
+
+        assert.calledWith(store, action, replacedData);
+        done();
+      }
+
+      dispatcher.dispatch(fakePromise, data, onData, stub().returns(replacedData));
+      fakePromise.then.yield(action);
     });
   });
 });
