@@ -1,3 +1,6 @@
+# v0.3.0-alpha.1 / 2015-07-12 12:38 GMT
+- Add the possibility to dispatch promises
+
 # v0.2.0-alpha.3 / 2015-07-06 12:35 GMT
 - Fix setter for immutable.js
 
