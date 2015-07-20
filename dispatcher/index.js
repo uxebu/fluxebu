@@ -60,9 +60,17 @@ function Dispatcher(get, set, equals) {
     );
   }
 
-  function dispatch(actionOrPromise, data, callback, getUpdatedData) {
+  function dispatch(actionOrPromise, data, callback) {
     var actionQueue = [];
     var pendingPromises = [];
+
+    var getUpdatedData;
+    if (typeof data === 'function') {
+      getUpdatedData = data;
+      data = getUpdatedData();
+    } else {
+      getUpdatedData = function() { return data; };
+    }
 
     function handlePromise(promise, maybeUnfinishedIterator) {
       pendingPromises.push(promise);
@@ -71,7 +79,7 @@ function Dispatcher(get, set, equals) {
           consumeIterator(maybeUnfinishedIterator, actionQueue, handlePromise);
         }
         removeFromArray(pendingPromises, promise);
-        runDispatch(getUpdatedData ? getUpdatedData() : data);
+        runDispatch(getUpdatedData());
       }
 
       promise.then(function(action) {
@@ -114,8 +122,8 @@ function Dispatcher(get, set, equals) {
   }
 
   return {
-    dispatch: function(actionOrPromise, initialData, callback, getUpdatedData) {
-      dispatch(actionOrPromise, initialData, callback, getUpdatedData);
+    dispatch: function(actionOrPromise, initialData, callback) {
+      dispatch(actionOrPromise, initialData, callback);
     },
     register: function(handler) {
       var keypaths = arguments.length < 2 ?

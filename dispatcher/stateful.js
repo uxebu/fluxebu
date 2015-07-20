@@ -11,7 +11,7 @@ module.exports = function StatefulDispatcher(dispatcher, data, onData) {
   }
 
   function dispatch(action) {
-    dispatcher.dispatch(action, data, wrappedOnData, getCurrentData);
+    dispatcher.dispatch(action, getCurrentData, wrappedOnData);
   }
 
   return {

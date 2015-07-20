@@ -509,7 +509,7 @@ describe('dispatcher:', function() {
       replacedData = {replaced: 'data'};
     });
 
-    it('uses the optional passed-in function to re-fetch after promises resolve', function(done) {
+    it('uses functions passed as `data` parameter to re-fetch data after promises resolve', function(done) {
       var action1 = {action: 1};
       var action2 = {action: 2};
       var store = stub()
@@ -524,7 +524,9 @@ describe('dispatcher:', function() {
         done();
       }
 
-      dispatcher.dispatch(action1, data, onData, stub().returns(replacedData));
+      var getData = stub().returns(data);
+      dispatcher.dispatch(action1, getData, onData);
+      getData.returns(replacedData);
       fakePromise.then.yield(action2);
     });
 
@@ -540,7 +542,9 @@ describe('dispatcher:', function() {
         done();
       }
 
-      dispatcher.dispatch(fakePromise, data, onData, stub().returns(replacedData));
+      var getData = stub().returns(data);
+      dispatcher.dispatch(fakePromise, getData, onData);
+      getData.returns(replacedData);
       fakePromise.then.yield(action);
     });
   });

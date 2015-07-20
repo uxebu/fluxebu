@@ -8,7 +8,6 @@ sinon.assert.expose(assert, {prefix: ''});
 var stub = sinon.stub;
 var spy = sinon.spy;
 var same = sinon.match.same;
-var any = sinon.match.any;
 
 var StatefulDispatcher = require('./stateful');
 
@@ -47,13 +46,14 @@ describe('stateful dispatcher wrapper:', function() {
       assert.calledWith(dispatcher.dispatch, same(action));
     });
 
-    it('forwards the passed-in data to the wrapped dispatcher', function() {
+    it('wraps the passed-in data in a function and forwards it to the wrapped dispatcher', function() {
       var data = {arbitrary: 'data'};
       var statefulDispatcher = StatefulDispatcher(dispatcher, data);
 
       statefulDispatcher.dispatch({});
 
-      assert.calledWith(dispatcher.dispatch, any, same(data));
+      var fn = dispatcher.dispatch.firstCall.args[1];
+      assert.strictEqual(fn(), data);
     });
 
     it('uses data provided by the wrapped dispatcher for the next dispatch', function() {
@@ -62,13 +62,15 @@ describe('stateful dispatcher wrapper:', function() {
       statefulDispatcher.dispatch({});
       dispatcher.dispatch.callArg(2, data);
       statefulDispatcher.dispatch({});
-      assert.calledWith(dispatcher.dispatch.secondCall, any, data);
+
+      var fn = dispatcher.dispatch.secondCall.args[1];
+      assert.strictEqual(fn(), data);
     });
 
-    it('passes the optional `updated data` getter to the wrapped dispatcher, to sync data across dispatches', function() {
+    it('provides a data getter that allows to sync data across dispatches', function() {
       var statefulDispatcher = StatefulDispatcher(dispatcher);
       statefulDispatcher.dispatch({});
-      var updatedData = dispatcher.dispatch.args[0][3];
+      var updatedData = dispatcher.dispatch.args[0][1];
       var data1 = {};
       var data2 = {};
 
@@ -84,7 +86,7 @@ describe('stateful dispatcher wrapper:', function() {
       var statefulDispatcher = StatefulDispatcher(dispatcher, {}, onData);
       statefulDispatcher.dispatch({});
 
-      dispatcher.dispatch.yield();
+      dispatcher.dispatch.callArg(2);
 
       assert.called(onData);
     });
@@ -94,8 +96,8 @@ describe('stateful dispatcher wrapper:', function() {
       var statefulDispatcher = StatefulDispatcher(dispatcher, {}, onData);
       statefulDispatcher.dispatch({});
 
-      dispatcher.dispatch.yield('a', false);
-      dispatcher.dispatch.yield('b', true);
+      dispatcher.dispatch.callArg(2, 'a', false);
+      dispatcher.dispatch.callArg(2, 'b', true);
 
       assert.calledWithExactly(onData, 'a');
       assert.calledWithExactly(onData, 'b');

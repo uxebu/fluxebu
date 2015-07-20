@@ -1,3 +1,6 @@
+# v0.3.0-alpha.2 / 2015-07-20 22:21 GMT
+- Shorten parameter list of `Dispatcher#dispatch`
+
 # v0.3.0-alpha.1 / 2015-07-12 12:38 GMT
 - Add the possibility to dispatch promises
 
