@@ -60,7 +60,7 @@ function Dispatcher(get, set, equals) {
     );
   }
 
-  function dispatch(actionOrPromise, data, callback) {
+  function dispatch(actionOrPromiseOrIterator, data, callback) {
     var actionQueue = [];
     var pendingPromises = [];
 
@@ -113,18 +113,20 @@ function Dispatcher(get, set, equals) {
       }
     }
 
-    if (isPromise(actionOrPromise)) {
-      handlePromise(actionOrPromise);
+    if (isPromise(actionOrPromiseOrIterator)) {
+      handlePromise(actionOrPromiseOrIterator);
     } else {
-      actionQueue.push(actionOrPromise);
+      if (isIterator(actionOrPromiseOrIterator)) {
+        consumeIterator(actionOrPromiseOrIterator, actionQueue, handlePromise);
+      } else {
+        actionQueue.push(actionOrPromiseOrIterator);
+      }
       runDispatch(data);
     }
   }
 
   return {
-    dispatch: function(actionOrPromise, initialData, callback) {
-      dispatch(actionOrPromise, initialData, callback);
-    },
+    dispatch: dispatch,
     register: function(handler) {
       var keypaths = arguments.length < 2 ?
         null : argumentsToKeypaths(arguments, 1);

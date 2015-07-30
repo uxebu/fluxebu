@@ -1,3 +1,6 @@
+# v0.4.0 / 2015-07-30 10:33 GMT
+- Add the possibility to dispatch iterators over actions
+
 # v0.3.0-alpha.2 / 2015-07-20 22:21 GMT
 - Shorten parameter list of `Dispatcher#dispatch`
 

@@ -55,8 +55,64 @@ describe('dispatcher:', function() {
       fakePromise.then.yield(action);
     });
 
-    it('uses a provided ', function() {
+    describe('dispatching of iterators:', function() {
+      var action1, action2, action3, fakePromise1, fakePromise2, fakePromise3;
+      beforeEach(function() {
+        action1 = {action: 1};
+        action2 = {action: 2};
+        action3 = {action: 3};
+        fakePromise1 = {then: stub()};
+        fakePromise2 = {then: stub()};
+        fakePromise3 = {then: stub()};
+      });
 
+      it('allows to dispatch an iterator of actions', function(done) {
+        var iterator = iteratorOf(action1, action2, action3);
+        dispatcher.dispatch(iterator, data, function(_, isDone) {
+          if (!isDone) return;
+
+          handlers.forEach(function(handler) {
+            assert.calledWith(handler.firstCall, same(action1));
+            assert.calledWith(handler.secondCall, same(action2));
+            assert.calledWith(handler.thirdCall, same(action3));
+          });
+          done();
+        });
+      });
+
+      it('allows to dispatch an iterator of actions and promises for actions', function(done) {
+        var iterator = iteratorOf(action1, fakePromise2, action3);
+        dispatcher.dispatch(iterator, data, function(_, isDone) {
+          if (!isDone) return;
+
+          handlers.forEach(function(handler) {
+            assert.calledWith(handler.firstCall, same(action1));
+            assert.calledWith(handler.secondCall, same(action2));
+            assert.calledWith(handler.thirdCall, same(action3));
+          });
+          done();
+        });
+
+        fakePromise2.then.yield(action2);
+      });
+
+      it('allows to dispatch an iterator over promises for actions', function(done) {
+        fakePromise1.then.yields(action1);
+        fakePromise2.then.yields(action2);
+        fakePromise3.then.yields(action3);
+
+        var iterator = iteratorOf(fakePromise1, fakePromise2, fakePromise3);
+        dispatcher.dispatch(iterator, data, function(_, isDone) {
+          if (!isDone) return;
+
+          handlers.forEach(function(handler) {
+            assert.calledWith(handler.firstCall, same(action1));
+            assert.calledWith(handler.secondCall, same(action2));
+            assert.calledWith(handler.thirdCall, same(action3));
+          });
+          done();
+        });
+      });
     });
   });
 
