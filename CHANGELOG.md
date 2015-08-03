@@ -1,3 +1,7 @@
+# v0.5.0 / 2015-08-03 22:42 GMT
+- Add history implementation for immutable.js
+- Move immutable.js implementations to own sub-module
+
 # v0.4.0 / 2015-07-30 10:33 GMT
 - Add the possibility to dispatch iterators over actions
 
