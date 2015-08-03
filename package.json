@@ -26,6 +26,7 @@
   "homepage": "https://github.com/uxebu/fluxebu#readme",
   "devDependencies": {
     "eslint": "^0.24.1",
+    "immutable": "^3.7.4",
     "mocha": "^2.2.5",
     "pinkie-promise": "^1.0.0",
     "sinon": "^1.15.3"
