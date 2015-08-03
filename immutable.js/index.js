@@ -1,6 +1,6 @@
 'use strict';
 
-var Dispatcher = require('.');
+var Dispatcher = require('../dispatcher');
 
 function get(object, keypath) {
   return object.getIn(keypath);
