@@ -36,7 +36,7 @@ prototype.set = function(key, value) {
   );
 };
 
-function walk(history, fromKey, toKey) {
+function walk2(history, fromKey, toKey) {
   var present = history.get('present');
   var from = history.get(fromKey).push(present);
   var to = history.get(toKey);
@@ -50,11 +50,11 @@ function walk(history, fromKey, toKey) {
 }
 
 prototype.undo = function() {
-  return walk(this, 'future', 'past');
+  return walk2(this, 'future', 'past');
 };
 
 prototype.redo = function() {
-  return walk(this, 'past', 'future');
+  return walk2(this, 'past', 'future');
 };
 
 exports = module.exports = function History(initialValue, options) {
@@ -77,10 +77,48 @@ var REDO = exports.REDO = Object('REDO');
 exports.UndoAction = function UndoAction() { return {type: UNDO}; };
 exports.RedoAction = function RedoAction() { return {type: REDO}; };
 
-exports.Store = function(action, history) {
+function walk(history, fromKey, toKey) {
+  var to = history.get(toKey);
+  if (!to.size) return history;
+
+  var from = history.get(fromKey);
+  var present = history.get('present');
   return (
-    action.type === UNDO ? history.undo() :
-    action.type === REDO ? history.redo() :
     history
+      .asMutable()
+      .set('present', to.peek())
+      .set(toKey, to.pop())
+      .set(fromKey, from.push(present))
+      .asImmutable()
   );
+}
+
+function extend(history, maxSize) {
+  var past = history.get('past');
+  var present = history.get('present');
+  var previous = past.peek();
+  return (
+    is(present, previous) ?
+      history : history.set('past', past.push(present).take(maxSize))
+  );
+}
+
+exports.Record = Record({
+  past: Stack(),
+  present: undefined,
+  future: Stack()
+});
+
+exports.Store = function(options) {
+  var maxSize = Infinity;
+  if (options) {
+    maxSize = options.maxSize || maxSize;
+  }
+  return function(action, history) {
+    return (
+      action.type === UNDO ? walk(history, 'future', 'past') :
+      action.type === REDO ? walk(history, 'past', 'future') :
+      extend(history, maxSize)
+    );
+  };
 };

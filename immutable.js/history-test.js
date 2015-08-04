@@ -13,6 +13,9 @@ var History = require('./history');
 var UndoAction = History.UndoAction;
 var RedoAction = History.RedoAction;
 var Store = History.Store;
+var HistoryRecord = History.Record;
+
+var reverse = Function.call.bind([].reverse);
 
 function assertEqual(value, immutableValue) {
   if (!immutableValue.equals(value)) {
@@ -27,146 +30,149 @@ function setPresent(history, value) {
   return history.set('present', value);
 }
 
-describe('history data structure:', function() {
+describe('history store:', function() {
+  var present, store;
+
+  function Value(label) {
+    return List([label, 'value']);
+  }
+
+  beforeEach(function() {
+    present = Value('present');
+    store = Store();
+  });
+
+  function createHistory() {
+    return HistoryRecord({
+      past: Stack(reverse(arguments)),
+      present: present
+    });
+  }
+
   describe('building history:', function() {
-    var history, initialValue;
-    beforeEach(function() {
-      initialValue = {initial: 'value'};
-      history = History(initialValue);
+    it('adds to the history for a handled action', function() {
+      var history = store({arbitrary: 'action'}, createHistory());
+      assertEqual(history.past, Stack([present]));
     });
 
-    it('exposes the passed-in initial value', function() {
-      assert.equal(history.present, initialValue);
+    it('appends to the existing history', function() {
+      var initial = Value('initial');
+      var later = Value('later');
+      var history = store({arbitrary: 'action'}, createHistory(initial, later));
+      assertEqual(history.past, Stack([present, later, initial]));
     });
 
-    it('pushes the initial value to the past when setting the present to a new value', function() {
-      var newHistory = history.set('present', {});
-      assertEqual(newHistory.past, Stack([initialValue]));
+    it('does not append to the history if the present value and the next value in the history are identical', function() {
+      var initial = Value('initial');
+      var history = store({arbitrary: 'action'}, createHistory(initial, present));
+      assertEqual(history.past, Stack([present, initial]));
     });
 
-    it('allows to set the present to a new value', function() {
-      var newValue = {};
-      var newHistory = history.set('present', newValue);
-      assert.equal(newHistory.present, newValue);
-    });
-
-    it('allows to update the present multiple times', function() {
-      var values = [{first: 'value'}, {second: 'value'}, {third: 'value'}];
-      var newHistory = values.reduce(setPresent, history);
-
-      assert.equal(newHistory.present, values[2]);
-      assertEqual(newHistory.past, Stack([values[1], values[0], initialValue]));
-    });
-
-    it('does not add a history step when setting the present value again', function() {
-      var value = {arbitrary: 'value'};
-      var newHistory = (
-        history
-          .set('present', value)
-          .set('present', value)
-      );
-
-      assertEqual(newHistory.past, Stack([initialValue]));
-    });
-
-    it('does not add a history step when setting a value equal to the present', function() {
-      var values = [1, 2, 3];
-      var present = List(values);
-      var equal = List(values);
-      assert.notEqual(
-        equal, present,
-        'Precondition failed: present and equal are the same object'
-      );
-
-      var newHistory = (
-        history
-          .set('present', present)
-          .set('present', equal)
-      );
-
-      assertEqual(newHistory.past, Stack([initialValue]));
+    it('does not append to the history if the present value and the next value in the history are considered equal by Immutable.js', function() {
+      var initial = Value('initial');
+      var previous = Value('present');
+      assert.notEqual(previous, present, 'Precondition failed: previous and present are the same object');
+      assert(Immutable.is(previous, present), 'Precondition failed: previous and present are not considered equal by Immutable.js');
+      var history = store({arbitrary: 'action'}, createHistory(initial, previous));
+      assertEqual(history.past, Stack([previous, initial]));
     });
   });
 
-  describe('undoing', function() {
-    var initialValue, steppedBack, values;
+  describe('undoing:', function() {
+    var history, initial, previous, next;
     beforeEach(function() {
-      initialValue = {initial: 'value'};
-      values = [{second: 'value'}, {third: 'value'}, {fourth: 'value'}];
-      steppedBack =
-        values
-          .reduce(setPresent, History(initialValue).asMutable())
-          .undo()
-          .asImmutable();
+      initial = Value('initial');
+      previous = Value('previous');
+      next = Value('next');
+      var previousHistory =
+        createHistory(initial, previous).set('future', Stack([next]));
+      history = store(UndoAction(), previousHistory);
     });
 
     it('restores the present from the past', function() {
-      assert.equal(steppedBack.present, values[1]);
+      assert.equal(history.present, previous);
     });
 
     it('adds the present to the future', function() {
-      assertEqual(steppedBack.future, Stack([values[2]]));
+      assertEqual(history.future, Stack([present, next]));
     });
 
     it('removes the first entry from the past', function() {
-      assertEqual(steppedBack.past, Stack([values[0], initialValue]));
+      assertEqual(history.past, Stack([initial]));
     });
 
-    it('clears the future if setting the present again', function() {
-      var history = steppedBack.set('present', {arbitrary: 'value'});
-      assertEqual(history.future, Stack());
+    it('does not do anything if the past is empty', function() {
+      var previousHistory = createHistory();
+      assert.equal(store(UndoAction(), previousHistory), previousHistory);
     });
   });
 
   describe('redoing:', function() {
-    var history, initialValue, values;
+    var history, last, next, previous;
     beforeEach(function() {
-      initialValue = {initial: 'value'};
-      values = [{second: 'value'}, {third: 'value'}, {fourth: 'value'}];
-      history =
-        values
-          .reduce(setPresent, History(initialValue).asMutable())
-          .undo()
-          .undo()
-          .redo()
-          .asImmutable();
+      last = Value('last');
+      next = Value('next');
+      previous = Value('previous');
+      var previousHistory =
+        createHistory(previous).set('future', Stack([next, last]));
+      history = store(RedoAction(), previousHistory);
     });
 
     it('restores the present from the future', function() {
-      assert.equal(history.present, values[1]);
+      assert.equal(history.present, next);
     });
 
     it('adds the present to the past', function() {
-      assertEqual(history.past, Stack([values[0], initialValue]));
+      assertEqual(history.past, Stack([present, previous]));
     });
 
     it('removes the first entry from the future', function() {
-      assertEqual(history.future, Stack([values[2]]));
+      assertEqual(history.future, Stack([last]));
+    });
+
+    it('does not do anything if the future is empty', function() {
+      var previousHistory = createHistory();
+      assert.equal(store(RedoAction(), previousHistory), previousHistory);
     });
   });
 
-  describe('maximum history size:', function() {
-    var history, initialValue, maxEntries, values;
+  describe('constrain history size:', function() {
+    it('discards history entries if the maximum amount of entries is reached', function() {
+      var maxSize = 3;
+      store = Store({maxSize: maxSize});
+      var previousHistory = createHistory.apply(null, range(maxSize).map(Value));
+      var history = store({arbitrary: 'action'}, previousHistory);
+
+      assertEqual(
+        history.past,
+        previousHistory.past.push(present).slice(0, -1)
+      );
+    });
+  });
+
+  describe('merging history entries:', function() {
+    var firstAction, secondAction, thirdAction;
     beforeEach(function() {
-      initialValue = 0;
-      values = [1, 2, 3, 4, 5, 6, 7];
-      maxEntries = values.length - 1;
-      history =
-        values
-          .reduce(setPresent, History(initialValue, {keep: maxEntries}))
-          .asImmutable();
+      firstAction = {first: 'action'};
+      secondAction = {second: 'action'};
+      thirdAction = {third: 'action'};
     });
 
-    it('only keeps the specified number of history steps', function() {
-      var expected =
-        values
-          .reverse()
-          .concat(initialValue)
-          .slice(1, 1 + maxEntries);
+    it('passes the current and the previous action to the `merge` callback', function(done) {
+      function merge(action, previousAction) {
+        if (!previousAction) return;
+        assert.equal(action, secondAction);
+        assert.equal(previousAction, firstAction);
+        done();
+      }
 
-      assertEqual(history.past, Stack(expected));
+      store = Store({merge: merge});
+      store(secondAction, store(firstAction, createHistory()));
     });
   });
+});
+
+xdescribe('history data structure:', function() {
 
   describe('merging history entries:', function() {
     var history, initialValue, merge, values;
@@ -190,25 +196,6 @@ describe('history data structure:', function() {
   });
 });
 
-describe('history store:', function() {
-  var history;
-  beforeEach(function() {
-    history = {
-      undo: sinon.stub().returns({}),
-      redo: sinon.stub().returns({}),
-    };
-  });
-
-  it('does nothing for arbitrary actions', function() {
-    var data = {};
-    assert.strictEqual(Store({arbitrary: 'action'}, data), data);
-  });
-
-  it('returns the result of `history.undo()` when handling an `UndoAction`', function() {
-    assert.strictEqual(Store(UndoAction(), history), history.undo());
-  });
-
-  it('returns the result of `history.redo()` when handling an `RedoAction`', function() {
-    assert.strictEqual(Store(RedoAction(), history), history.redo());
-  });
-});
+function range(stop) {
+  return Array.apply(null, Array(stop)).map(function(_, i) { return i; });
+}
