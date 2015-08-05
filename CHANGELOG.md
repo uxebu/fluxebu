@@ -1,3 +1,6 @@
+# v0.6.0 / 2015-08-05 22:56 GMT
+- Retake on history implementation and idea
+
 # v0.5.0 / 2015-08-03 22:42 GMT
 - Add history implementation for immutable.js
 - Move immutable.js implementations to own sub-module
