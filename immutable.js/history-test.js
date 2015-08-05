@@ -15,8 +15,6 @@ var RedoAction = History.RedoAction;
 var Store = History.Store;
 var HistoryRecord = History.Record;
 
-var reverse = Function.call.bind([].reverse);
-
 function assertEqual(value, immutableValue) {
   if (!immutableValue.equals(value)) {
     assert.equal(
@@ -42,10 +40,11 @@ describe('history store:', function() {
     store = Store();
   });
 
-  function createHistory() {
+  function createHistory(past, future, otherPresent) {
     return HistoryRecord({
-      past: Stack(reverse(arguments)),
-      present: present
+      past: Stack((past || []).reverse()),
+      present: arguments.length < 3 ? present : otherPresent,
+      future: Stack(future)
     });
   }
 
@@ -58,13 +57,13 @@ describe('history store:', function() {
     it('appends to the existing history', function() {
       var initial = Value('initial');
       var later = Value('later');
-      var history = store({arbitrary: 'action'}, createHistory(initial, later));
+      var history = store({arbitrary: 'action'}, createHistory([initial, later]));
       assertEqual(history.past, Stack([present, later, initial]));
     });
 
     it('does not append to the history if the present value and the next value in the history are identical', function() {
       var initial = Value('initial');
-      var history = store({arbitrary: 'action'}, createHistory(initial, present));
+      var history = store({arbitrary: 'action'}, createHistory([initial, present]));
       assertEqual(history.past, Stack([present, initial]));
     });
 
@@ -73,7 +72,7 @@ describe('history store:', function() {
       var previous = Value('present');
       assert.notEqual(previous, present, 'Precondition failed: previous and present are the same object');
       assert(Immutable.is(previous, present), 'Precondition failed: previous and present are not considered equal by Immutable.js');
-      var history = store({arbitrary: 'action'}, createHistory(initial, previous));
+      var history = store({arbitrary: 'action'}, createHistory([initial, previous]));
       assertEqual(history.past, Stack([previous, initial]));
     });
   });
@@ -84,8 +83,7 @@ describe('history store:', function() {
       initial = Value('initial');
       previous = Value('previous');
       next = Value('next');
-      var previousHistory =
-        createHistory(initial, previous).set('future', Stack([next]));
+      var previousHistory = createHistory([initial, previous], [next]);
       history = store(UndoAction(), previousHistory);
     });
 
@@ -113,8 +111,7 @@ describe('history store:', function() {
       last = Value('last');
       next = Value('next');
       previous = Value('previous');
-      var previousHistory =
-        createHistory(previous).set('future', Stack([next, last]));
+      var previousHistory = createHistory([previous], [next, last]);
       history = store(RedoAction(), previousHistory);
     });
 
@@ -140,7 +137,7 @@ describe('history store:', function() {
     it('discards history entries if the maximum amount of entries is reached', function() {
       var maxSize = 3;
       store = Store({maxSize: maxSize});
-      var previousHistory = createHistory.apply(null, range(maxSize).map(Value));
+      var previousHistory = createHistory(range(maxSize).map(Value));
       var history = store({arbitrary: 'action'}, previousHistory);
 
       assertEqual(
@@ -158,44 +155,42 @@ describe('history store:', function() {
       thirdAction = {third: 'action'};
     });
 
-    it('passes the current and the previous action to the `merge` callback', function(done) {
-      function merge(action, previousAction) {
-        if (!previousAction) return;
-        assert.equal(action, secondAction);
-        assert.equal(previousAction, firstAction);
-        done();
+    function applyActions(storeFn) {
+      return (
+        [firstAction, secondAction, thirdAction]
+          .reduce(function(history, action) {
+            return storeFn(action, history).update('present', increase);
+          }, createHistory([], [], 1))
+      );
+    }
+
+    it('passes the current action and value as well as the previous action and value to the `merge` callback', function() {
+      var merge = sinon.spy();
+      store = Store({merge: merge});
+
+      applyActions(store);
+
+      sinon.assert.calledWith(merge, 1, firstAction, undefined, undefined);
+      sinon.assert.calledWith(merge, 2, secondAction, 1, firstAction);
+      sinon.assert.calledWith(merge, 3, thirdAction, 2, secondAction);
+      sinon.assert.calledThrice(merge);
+    });
+
+    it('replaces history entries rather than replacing them if `merge` returns `true`', function() {
+      function merge(_, action, __, previousAction) {
+        return action === thirdAction && previousAction === secondAction;
       }
 
-      store = Store({merge: merge});
-      store(secondAction, store(firstAction, createHistory()));
-    });
-  });
-});
-
-xdescribe('history data structure:', function() {
-
-  describe('merging history entries:', function() {
-    var history, initialValue, merge, values;
-    beforeEach(function() {
-      merge = function(newValue, precedingValue) {
-        return newValue === 3 && precedingValue === 2;
-      };
-
-      initialValue = 0;
-      values = [1, 2, 3];
-      history =
-        values
-          .reduce(setPresent, History(initialValue, {merge: merge}))
-          .asImmutable();
-    });
-
-    it('replaces the present if the optional `merge` function returns true for two values', function() {
-      assert.strictEqual(history.present, 3);
-      assertEqual(history.past, Stack([1, 0]));
+      var history = applyActions(Store({merge: merge}));
+      assertEqual(history.past, Stack([3, 1]));
     });
   });
 });
 
 function range(stop) {
   return Array.apply(null, Array(stop)).map(function(_, i) { return i; });
+}
+
+function increase(n) {
+  return n + 1;
 }

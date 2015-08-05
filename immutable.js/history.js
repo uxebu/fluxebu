@@ -93,32 +93,42 @@ function walk(history, fromKey, toKey) {
   );
 }
 
-function extend(history, maxSize) {
+function extend(history, action, maxSize, merge) {
   var past = history.get('past');
   var present = history.get('present');
   var previous = past.peek();
+
   return (
-    is(present, previous) ?
-      history : history.set('past', past.push(present).take(maxSize))
+    is(present, previous) ? history :
+    merge(present, action, past.peek(), history.lastAction) ?
+      history.set('past', past.pop().push(present)) :
+    history
+      .set('past', past.push(present).take(maxSize))
+      .set('lastAction', action)
   );
 }
 
 exports.Record = Record({
   past: Stack(),
   present: undefined,
-  future: Stack()
+  future: Stack(),
+  lastAction: undefined
 });
 
 exports.Store = function(options) {
   var maxSize = Infinity;
+  var merge = returnFalse;
   if (options) {
     maxSize = options.maxSize || maxSize;
+    merge = options.merge || merge;
   }
   return function(action, history) {
     return (
       action.type === UNDO ? walk(history, 'future', 'past') :
       action.type === REDO ? walk(history, 'past', 'future') :
-      extend(history, maxSize)
+      extend(history, action, maxSize, merge)
     );
   };
 };
+
+function returnFalse() { return false; }
