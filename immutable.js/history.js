@@ -98,13 +98,20 @@ function extend(history, action, maxSize, merge) {
   var present = history.get('present');
   var previous = past.peek();
 
+  if (is(present, previous)) return history;
+
+  var newPast = past.asMutable();
+  if (merge(present, action, past.peek(), history.lastAction)) {
+    newPast.pop();
+  }
+
   return (
-    is(present, previous) ? history :
-    merge(present, action, past.peek(), history.lastAction) ?
-      history.set('past', past.pop().push(present)) :
     history
-      .set('past', past.push(present).take(maxSize))
+      .asMutable()
+      .set('past', newPast.push(present).take(maxSize).asImmutable())
+      .set('future', Stack())
       .set('lastAction', action)
+      .asImmutable()
   );
 }
 

@@ -24,10 +24,6 @@ function assertEqual(value, immutableValue) {
   }
 }
 
-function setPresent(history, value) {
-  return history.set('present', value);
-}
-
 describe('history store:', function() {
   var present, store;
 
@@ -74,6 +70,12 @@ describe('history store:', function() {
       assert(Immutable.is(previous, present), 'Precondition failed: previous and present are not considered equal by Immutable.js');
       var history = store({arbitrary: 'action'}, createHistory([initial, previous]));
       assertEqual(history.past, Stack([previous, initial]));
+    });
+
+    it('discards any future state when adding to the history', function() {
+      var initialHistory = createHistory([], [Value('arbitrary')]);
+      var history = store({arbitrary: 'action'}, initialHistory);
+      assertEqual(history.future, Stack());
     });
   });
 
@@ -183,6 +185,26 @@ describe('history store:', function() {
 
       var history = applyActions(Store({merge: merge}));
       assertEqual(history.past, Stack([3, 1]));
+    });
+
+    it('discards any future state when merging the first history entry', function() {
+      var initialHistory = createHistory([Value('previous')], [Value('arbitrary')]);
+      store = Store({merge: function() { return true; }});
+      var history = store({arbitrary: 'action'}, initialHistory);
+      assertEqual(history.future, Stack());
+    });
+
+    it('passes the correct actions to `merge` when replacing', function() {
+      var merge = sinon.spy(function(_, action) {
+        return action === secondAction;
+      });
+      store = Store({merge: merge});
+
+      applyActions(store);
+
+      sinon.assert.calledWith(merge, 1, firstAction, undefined, undefined);
+      sinon.assert.calledWith(merge, 2, secondAction, 1, firstAction);
+      sinon.assert.calledWith(merge, 3, thirdAction, 2, secondAction);
     });
   });
 });
