@@ -27,12 +27,14 @@ function walk(history, fromKey, toKey) {
   );
 }
 
-function extend(history, action, maxSize, merge) {
+function extend(history, action, maxSize, merge, includeAction) {
   var past = history.get('past');
   var present = history.get('present');
   var previous = past.peek();
 
-  if (is(present, previous)) return history;
+  if (is(present, previous)) {
+    return includeAction(action) ? history.set('lastAction', action) : history;
+  }
 
   var newPast = past.asMutable();
   if (merge(present, action, past.peek(), history.lastAction)) {
@@ -57,9 +59,11 @@ exports.Record = Record({
 });
 
 exports.Store = function(options) {
+  var includeAction = returnFalse;
   var maxSize = Infinity;
   var merge = returnFalse;
   if (options) {
+    includeAction = options.includeAction || includeAction;
     maxSize = options.maxSize || maxSize;
     merge = options.merge || merge;
   }
@@ -67,7 +71,7 @@ exports.Store = function(options) {
     return (
       action.type === UNDO ? walk(history, 'future', 'past') :
       action.type === REDO ? walk(history, 'past', 'future') :
-      extend(history, action, maxSize, merge)
+      extend(history, action, maxSize, merge, includeAction)
     );
   };
 };

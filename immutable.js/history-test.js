@@ -207,6 +207,29 @@ describe('history store:', function() {
       sinon.assert.calledWith(merge, 3, thirdAction, 2, secondAction);
     });
   });
+
+  describe("including actions that didn't change data:", function() {
+    it('includes actions even though no data has changed if the `includeAction` calback returns true', function() {
+      var action1 = {action: 1};
+      var action2 = {action: 2};
+      var action3 = {action: 3};
+      var merge = sinon.spy();
+
+      function setPresent(action, history) {
+        return action === action3 ? history.set('present', {}) : history;
+      }
+
+      store = Store({
+        includeAction: function(action) { return action === action2; },
+        merge: merge
+      });
+      [action1, action2, action3].reduce(function(history, action) {
+        return store(action, setPresent(action, history));
+      }, HistoryRecord());
+
+      assert.calledWith(merge, {}, action3, undefined, action2);
+    });
+  });
 });
 
 function range(stop) {
