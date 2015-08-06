@@ -1,3 +1,5 @@
+# v0.6.1 / 2015-08-06 7:34 GMT
+- Clean up history module
 - Make exports of `immutable.js` module clearer
 
 # v0.6.0 / 2015-08-05 22:56 GMT
