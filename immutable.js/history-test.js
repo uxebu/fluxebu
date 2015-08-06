@@ -44,6 +44,14 @@ describe('history store:', function() {
     });
   }
 
+  describe('creating:', function() {
+    it('returns a history with past and present containing the current value', function() {
+      var history = HistoryRecord.create(present);
+      assertEqual(history.past, Stack([present]));
+      assert.equal(history.present, present);
+    });
+  });
+
   describe('building history:', function() {
     it('adds to the history for a handled action', function() {
       var history = store({arbitrary: 'action'}, createHistory());
@@ -79,6 +87,32 @@ describe('history store:', function() {
     });
   });
 
+  describe('capabilities:', function() {
+    it('`canUndo` reports `false` if the past is empty', function() {
+      assert.equal(createHistory().canUndo(), false);
+    });
+
+    it('`canUndo` reports `false` if the past contains only the present', function() {
+      assert.equal(createHistory([present, present]).canUndo(), false);
+    });
+
+    it('`canUndo` reports `true` if the past contains a value different from the present', function() {
+      assert.equal(createHistory([Value('other')]).canUndo(), true);
+    });
+
+    it('`canRedo()` reports `false` if the future is empty', function() {
+      assert.equal(createHistory().canRedo(), false);
+    });
+
+    it('`canRedo()` reports `false` if the future contains only the present', function() {
+      assert.equal(createHistory([], [present, present]).canRedo(), false);
+    });
+
+    it('`canRedo()` reports `true` if the future contains a value different from the present', function() {
+      assert.equal(createHistory([], [Value('other')]).canRedo(), true);
+    });
+  });
+
   describe('undoing:', function() {
     var history, initial, previous, next;
     beforeEach(function() {
@@ -103,7 +137,21 @@ describe('history store:', function() {
 
     it('does not do anything if the past is empty', function() {
       var previousHistory = createHistory();
-      assert.equal(store(UndoAction(), previousHistory), previousHistory);
+      assertEqual(store(UndoAction(), previousHistory), previousHistory);
+    });
+
+    it('does not do anything if the past contains only the present', function() {
+      var previousHistory = createHistory([present, present]);
+      assertEqual(store(RedoAction(), previousHistory), previousHistory);
+    });
+
+    it('skips any items on the past stack that are identical to the present', function() {
+      history = createHistory([previous, present, present], [next]);
+      var afterUndo = store(UndoAction(), history);
+
+      assertEqual(afterUndo.past, Stack());
+      assertEqual(afterUndo.future, Stack([present, next]));
+      assertEqual(afterUndo.present, previous);
     });
   });
 
@@ -131,7 +179,21 @@ describe('history store:', function() {
 
     it('does not do anything if the future is empty', function() {
       var previousHistory = createHistory();
-      assert.equal(store(RedoAction(), previousHistory), previousHistory);
+      assertEqual(store(RedoAction(), previousHistory), previousHistory);
+    });
+
+    it('does not do anything if the future contains only the present', function() {
+      var previousHistory = createHistory([], [present, present]);
+      assertEqual(store(RedoAction(), previousHistory), previousHistory);
+    });
+
+    it('skips any items on the future stack that are identical to the present', function() {
+      history = createHistory([previous], [present, present, next]);
+      var afterRedo = store(RedoAction(), history);
+
+      assertEqual(afterRedo.future, Stack());
+      assertEqual(afterRedo.past, Stack([present, previous]));
+      assertEqual(afterRedo.present, next);
     });
   });
 

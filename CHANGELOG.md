@@ -1,3 +1,7 @@
+# v0.6.3 / 2015-08-06 15:58 GMT
+- Make history work as expected and actually useful
+- `canUndo()` and `canRedo()` methods on Record instances
+
 # v0.6.2 / 2015-08-06 9:47 GMT
 - Add `includeAction` callback for history
 

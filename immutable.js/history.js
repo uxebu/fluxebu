@@ -13,15 +13,21 @@ exports.RedoAction = function RedoAction() { return {type: REDO}; };
 
 function walk(history, fromKey, toKey) {
   var to = history.get(toKey);
-  if (!to.size) return history;
+  var canWalk = toKey === 'future' ? history.canRedo() : history.canUndo();
+
+  if (!canWalk) return history;
 
   var from = history.get(fromKey);
   var present = history.get('present');
+  to = to.asMutable();
+  while (to.size && to.peek() === present) {
+    to.pop();
+  }
   return (
     history
       .asMutable()
       .set('present', to.peek())
-      .set(toKey, to.pop())
+      .set(toKey, to.pop().asImmutable())
       .set(fromKey, from.push(present))
       .asImmutable()
   );
@@ -51,12 +57,31 @@ function extend(history, action, maxSize, merge, includeAction) {
   );
 }
 
-exports.Record = Record({
+var HistoryRecord = Record({
   past: Stack(),
   present: undefined,
   future: Stack(),
   lastAction: undefined
 });
+
+HistoryRecord.prototype.canUndo = function() {
+  var present = this.get('present');
+  return this.past.some(function(value) { return value !== present; });
+};
+
+HistoryRecord.prototype.canRedo = function() {
+  var present = this.get('present');
+  return this.future.some(function(value) { return value !== present; });
+};
+
+HistoryRecord.create = function(initialData) {
+  return HistoryRecord({
+    past: Stack.of(initialData),
+    present: initialData
+  });
+};
+
+exports.Record = HistoryRecord;
 
 exports.Store = function(options) {
   var includeAction = returnFalse;
