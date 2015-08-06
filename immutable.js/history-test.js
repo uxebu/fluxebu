@@ -7,7 +7,7 @@ var sinon = require('sinon');
 
 var Immutable = require('immutable');
 var Stack = Immutable.Stack;
-var List = Immutable.List;
+var Record = Immutable.Record;
 
 var History = require('./history');
 var UndoAction = History.UndoAction;
@@ -27,8 +27,10 @@ function assertEqual(value, immutableValue) {
 describe('history store:', function() {
   var present, store;
 
+  var ValueRecord = Record({value: null});
+
   function Value(label) {
-    return List([label, 'value']);
+    return ValueRecord({value: label});
   }
 
   beforeEach(function() {
@@ -80,17 +82,16 @@ describe('history store:', function() {
       assertEqual(history.past, Stack([previous, initial]));
     });
 
-    it('discards any future state when adding to the history', function() {
+    it('discards any future values when adding to the history', function() {
       var initialHistory = createHistory([], [Value('arbitrary')]);
       var history = store({arbitrary: 'action'}, initialHistory);
       assertEqual(history.future, Stack());
     });
 
-    it('does not discard any future state if the last action was an undo', function() {
-      var value = Value('arbitrary');
-      var initialHistory = createHistory([], [value]).set('lastAction', UndoAction());
+    it('does nothing if the present is the first value on the future stack', function() {
+      var initialHistory = createHistory([], [Value('present'), Value('arbitrary')]);
       var history = store({arbitrary: 'action'}, initialHistory);
-      assertEqual(history.future, Stack([value]));
+      assertEqual(history, initialHistory);
     });
   });
 
@@ -138,8 +139,8 @@ describe('history store:', function() {
       assertEqual(history.future, Stack([present, next]));
     });
 
-    it('removes the first entry from the past', function() {
-      assertEqual(history.past, Stack([initial]));
+    it('keeps the new present as first entry of the past stack', function() {
+      assertEqual(history.past, Stack([previous, initial]));
     });
 
     it('does not do anything if the past is empty', function() {
@@ -156,7 +157,7 @@ describe('history store:', function() {
       history = createHistory([previous, present, present], [next]);
       var afterUndo = store(UndoAction(), history);
 
-      assertEqual(afterUndo.past, Stack());
+      assertEqual(afterUndo.past, Stack([previous]));
       assertEqual(afterUndo.future, Stack([present, next]));
       assertEqual(afterUndo.present, previous);
     });
@@ -180,8 +181,8 @@ describe('history store:', function() {
       assertEqual(history.past, Stack([present, previous]));
     });
 
-    it('removes the first entry from the future', function() {
-      assertEqual(history.future, Stack([last]));
+    it('keeps the new present in the future', function() {
+      assertEqual(history.future, Stack([next, last]));
     });
 
     it('does not do anything if the future is empty', function() {
@@ -198,9 +199,16 @@ describe('history store:', function() {
       history = createHistory([previous], [present, present, next]);
       var afterRedo = store(RedoAction(), history);
 
-      assertEqual(afterRedo.future, Stack());
+      assertEqual(afterRedo.future, Stack([next]));
       assertEqual(afterRedo.past, Stack([present, previous]));
       assertEqual(afterRedo.present, next);
+    });
+
+    it('does not create double values in the past', function() {
+      history = createHistory([previous, present], [next]);
+      var afterRedo = store(RedoAction(), history);
+
+      assertEqual(afterRedo.past, Stack([present, previous]));
     });
   });
 
@@ -256,8 +264,9 @@ describe('history store:', function() {
       assertEqual(history.past, Stack([3, 1]));
     });
 
-    it('discards any future state when merging the first history entry', function() {
-      var initialHistory = createHistory([Value('previous')], [Value('arbitrary')]);
+    it('discards any future state when merging history entries', function() {
+      var initialHistory =
+        createHistory([Value('first'), Value('previous')], [Value('arbitrary')]);
       store = Store({merge: function() { return true; }});
       var history = store({arbitrary: 'action'}, initialHistory);
       assertEqual(history.future, Stack());
@@ -299,6 +308,52 @@ describe('history store:', function() {
       assert.calledWith(merge, {}, action3, undefined, action2);
     });
   });
+
+  describe('undo/redo sequence:', function() {
+    var a, b, c, d, otherAction;
+    beforeEach(function() {
+      a = Value('a');
+      b = Value('b');
+      c = Value('c');
+      d = Value('d');
+      otherAction = {other: 'action'};
+    });
+
+    function undo(history) {
+      return (
+        [UndoAction(), otherAction, UndoAction(), otherAction]
+          .reduce(flip(store), history || createHistory([a, b, c, d], [], d))
+      );
+    }
+
+    function redo() {
+      return (
+        [RedoAction(), otherAction, RedoAction(), otherAction]
+          .reduce(flip(store), undo())
+      );
+    }
+
+    it('can undo successfully', function() {
+      var afterUndo = undo();
+      assertEqual(afterUndo.past, Stack([b, a]));
+      assertEqual(afterUndo.present, b);
+      assertEqual(afterUndo.future, Stack([c, d]));
+    });
+
+    it('can redo successfully', function() {
+      var afterRedo = redo();
+      assertEqual(afterRedo.past, Stack([c, b, a]));
+      assertEqual(afterRedo.present, d);
+      assertEqual(afterRedo.future, Stack([d]));
+    });
+
+    it('can undo again after redoing', function() {
+      var afterUndo = undo(redo());
+      assertEqual(afterUndo.past, Stack([b, a]));
+      assertEqual(afterUndo.present, b);
+      assertEqual(afterUndo.future, Stack([c, d]));
+    });
+  });
 });
 
 function range(stop) {
@@ -307,4 +362,10 @@ function range(stop) {
 
 function increase(n) {
   return n + 1;
+}
+
+function flip(fn) {
+  return function(a, b) {
+    return fn(b, a);
+  };
 }

@@ -11,56 +11,6 @@ var REDO = exports.REDO = Object('REDO');
 exports.UndoAction = function UndoAction() { return {type: UNDO}; };
 exports.RedoAction = function RedoAction() { return {type: REDO}; };
 
-function walk(history, fromKey, toKey) {
-  var to = history.get(toKey);
-  var canWalk = toKey === 'future' ? history.canRedo() : history.canUndo();
-
-  if (!canWalk) return history;
-
-  var from = history.get(fromKey);
-  var present = history.get('present');
-  to = to.asMutable();
-  while (to.size && to.peek() === present) {
-    to.pop();
-  }
-  return (
-    history
-      .asMutable()
-      .set('present', to.peek())
-      .set(toKey, to.pop().asImmutable())
-      .set(fromKey, from.push(present))
-      .asImmutable()
-  );
-}
-
-function extend(history, action, maxSize, merge, includeAction) {
-  var past = history.get('past');
-  var present = history.get('present');
-  var previous = past.peek();
-
-  if (is(present, previous)) {
-    return includeAction(action) ? history.set('lastAction', action) : history;
-  }
-
-  var newPast = past.asMutable();
-  var lastAction = history.lastAction;
-  if (merge(present, action, past.peek(), lastAction)) {
-    newPast.pop();
-  }
-
-  history = history.asMutable();
-  if (!lastAction || lastAction.type !== UNDO) {
-    history.set('future', Stack());
-  }
-
-  return (
-    history
-      .set('past', newPast.push(present).take(maxSize).asImmutable())
-      .set('lastAction', action)
-      .asImmutable()
-  );
-}
-
 var HistoryRecord = Record({
   past: Stack(),
   present: undefined,
@@ -70,12 +20,16 @@ var HistoryRecord = Record({
 
 HistoryRecord.prototype.canUndo = function() {
   var present = this.get('present');
-  return this.past.some(function(value) { return value !== present; });
+  return this.get('past').some(function(value) {
+    return value !== present;
+  });
 };
 
 HistoryRecord.prototype.canRedo = function() {
   var present = this.get('present');
-  return this.future.some(function(value) { return value !== present; });
+  return this.get('future').some(function(value) {
+    return value !== present;
+  });
 };
 
 HistoryRecord.create = function(initialData) {
@@ -98,11 +52,70 @@ exports.Store = function(options) {
   }
   return function(action, history) {
     return (
-      action.type === UNDO ? walk(history, 'future', 'past') :
-      action.type === REDO ? walk(history, 'past', 'future') :
+      action.type === UNDO ? undo(history) :
+      action.type === REDO ? redo(history) :
       extend(history, action, maxSize, merge, includeAction)
     );
   };
 };
 
 function returnFalse() { return false; }
+
+function equals(value) {
+  return function(other) {
+    return other === value;
+  };
+}
+
+function walk(history, fromKey, toKey) {
+  var present = history.get('present');
+  var to = history.get(toKey).skipWhile(equals(present));
+
+  return (
+    history
+      .asMutable()
+      .set('present', to.peek())
+      .set(toKey, to)
+      .update(fromKey, function(from) {
+        return from.peek() === present ? from : from.push(present);
+      })
+      .asImmutable()
+  );
+}
+
+function undo(history) {
+  return history.canUndo() ? walk(history, 'future', 'past') : history;
+}
+
+function redo(history) {
+  return history.canRedo() ? walk(history, 'past', 'future') : history;
+}
+
+function extend(history, action, maxSize, merge, includeAction) {
+  var past = history.get('past');
+  var present = history.get('present');
+  var previous = past.peek();
+
+  if (is(present, previous) || is(present, history.get('future').peek())) {
+    return includeAction(action) ? history.set('lastAction', action) : history;
+  }
+
+  var lastAction = history.get('lastAction');
+  var shouldMerge = merge(present, action, previous, lastAction);
+
+  return (
+    history
+      .asMutable()
+      .set('past',
+        past
+          .asMutable()
+          .skip(shouldMerge ? 1 : 0)
+          .push(present)
+          .take(maxSize)
+          .asImmutable()
+      )
+      .set('future', Stack())
+      .set('lastAction', action)
+      .asImmutable()
+  );
+}
