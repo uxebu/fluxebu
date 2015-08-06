@@ -14,7 +14,7 @@ function equals(a, b) {
   return a === b || a.equals(b);
 }
 
-exports = module.exports = function DispatcherForImmutable() {
+exports.Dispatcher = function DispatcherForImmutable() {
   return Dispatcher(get, set, equals);
 };
 

@@ -1,3 +1,5 @@
+- Make exports of `immutable.js` module clearer
+
 # v0.6.0 / 2015-08-05 22:56 GMT
 - Retake on history implementation and idea
 
