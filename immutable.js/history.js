@@ -43,15 +43,19 @@ function extend(history, action, maxSize, merge, includeAction) {
   }
 
   var newPast = past.asMutable();
-  if (merge(present, action, past.peek(), history.lastAction)) {
+  var lastAction = history.lastAction;
+  if (merge(present, action, past.peek(), lastAction)) {
     newPast.pop();
+  }
+
+  history = history.asMutable();
+  if (!lastAction || lastAction.type !== UNDO) {
+    history.set('future', Stack());
   }
 
   return (
     history
-      .asMutable()
       .set('past', newPast.push(present).take(maxSize).asImmutable())
-      .set('future', Stack())
       .set('lastAction', action)
       .asImmutable()
   );

@@ -85,6 +85,13 @@ describe('history store:', function() {
       var history = store({arbitrary: 'action'}, initialHistory);
       assertEqual(history.future, Stack());
     });
+
+    it('does not discard any future state if the last action was an undo', function() {
+      var value = Value('arbitrary');
+      var initialHistory = createHistory([], [value]).set('lastAction', UndoAction());
+      var history = store({arbitrary: 'action'}, initialHistory);
+      assertEqual(history.future, Stack([value]));
+    });
   });
 
   describe('capabilities:', function() {

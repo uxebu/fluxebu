@@ -1,3 +1,6 @@
+# v0.6.4 / 2015-08-06 16:28 GMT
+- Stop discarding the future when undoing
+
 # v0.6.3 / 2015-08-06 15:58 GMT
 - Make history work as expected and actually useful
 - `canUndo()` and `canRedo()` methods on Record instances
